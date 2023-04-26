@@ -20,8 +20,8 @@ const Physics = (entities, { touches, time, dispatch }) => {
     //         })
     //     })
 
+    // From this we can calculate the position of each object for the ant
     // console.log(Object.values(entities).map(val => val?.body?.position))
-    console.log(entities[`Ant${1}`]?.body?.position)
 
     touches.filter(t => t.type === "move").forEach(t => {
         // console.log(t)
