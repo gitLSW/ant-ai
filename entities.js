@@ -6,8 +6,8 @@ import Ressource from './entities/Ressource';
 import Enemy from './entities/Enemy';
 import { getRandomCoordiante } from "./utils/random";
 
-const levelHeight = 400
-const levelWidth = 400
+const levelHeight = 1000
+const levelWidth = 1000
 
 export default restart => {
     let engine = Matter.Engine.create({ enableSleeping: false })
@@ -49,6 +49,6 @@ export default restart => {
 
     return {
         ...entities,
-        Camera: { position: colonyPos }
+        Camera: { position: { x: 0, y: 0 } }
     }
 }

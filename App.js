@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react'
 import { Text, TouchableOpacity, View } from 'react-native'
 import { GameEngine } from 'react-native-game-engine'
 import entities from './entities'
-import Camera from './systems/camera'
+import CameraMovement from './systems/camera-movement'
+import AiControl from './systems/ai-control'
 import Game from './systems/game'
 import CameraRenderer from './camera-renderer'
 
@@ -25,7 +26,7 @@ export default function App() {
       {/* Game */}
       <GameEngine
         ref={(ref) => { setGameEngine(ref) }}
-        systems={[Camera, Game]}
+        systems={[CameraMovement, AiControl, Game]}
         renderer={CameraRenderer}
         entities={entities()}
         running={running}

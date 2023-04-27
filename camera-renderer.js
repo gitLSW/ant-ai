@@ -1,12 +1,12 @@
-import React, { Component } from "react";
+import React from "react";
 import { View } from "react-native";
 
 export default (state, screen) => {
     if (!state) return null;
     return (
         <View style={{
-            marginLeft: state.Camera.position.x + screen.width / 2,
-            marginTop: state.Camera.position.y + screen.height / 2
+            marginLeft: state.Camera.position.x,
+            marginTop: state.Camera.position.y
         }}>
             {Object.keys(state)
                 .filter(key => state[key].renderer)
