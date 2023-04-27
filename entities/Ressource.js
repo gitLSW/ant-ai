@@ -25,7 +25,7 @@ const Ressource = props => {
     )
 }
 
-export default (world, label, color, pos, size) => {
+export default (world, label, pos, size) => {
     const initialRessource = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
@@ -41,7 +41,7 @@ export default (world, label, color, pos, size) => {
 
     return {
         body: initialRessource,
-        color,
+        color: 'yellow',
         pos,
         renderer: <Ressource />
     }

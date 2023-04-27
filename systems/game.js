@@ -1,6 +1,6 @@
 import Matter from "matter-js"
 
-export default Game = (entities, { time, dispatch }) => {
+export default (entities, { time, dispatch }) => {
     const engine = entities.physics.engine
 
     Matter.Engine.update(engine, time.delta)

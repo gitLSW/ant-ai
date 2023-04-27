@@ -13,9 +13,7 @@ const Obstacle = props => {
 
     return (
         <View style={{
-            borderWidth: 1,
-            borderColor: color,
-            borderStyle: 'solid',
+            backgroundColor: color,
             position: 'absolute',
             left: xBody,
             top: yBody,
@@ -25,14 +23,14 @@ const Obstacle = props => {
     )
 }
 
-export default (world, label, color, pos, size) => {
+export default (world, pos, size) => {
     const initialObstacle = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
         {
-            label,
+            label: 'Obstacle',
             isStatic: true
         }
     )
@@ -41,7 +39,7 @@ export default (world, label, color, pos, size) => {
 
     return {
         body: initialObstacle,
-        color,
+        color: 'brown',
         pos,
         renderer: <Obstacle />
     }

@@ -2,7 +2,7 @@ import Matter from 'matter-js'
 import React from 'react'
 import { View } from 'react-native'
 
-const Floor = props => {
+const Spider = props => {
     const widthBody = props.body.bounds.max.x - props.body.bounds.min.x
     const heightBody = props.body.bounds.max.y - props.body.bounds.min.y
 
@@ -13,7 +13,9 @@ const Floor = props => {
 
     return (
         <View style={{
-            backgroundColor: color,
+            borderWidth: 1,
+            borderColor: color,
+            borderStyle: 'solid',
             position: 'absolute',
             left: xBody,
             top: yBody,
@@ -23,24 +25,23 @@ const Floor = props => {
     )
 }
 
-export default (world, color, pos, size) => {
-    const initialFloor = Matter.Bodies.rectangle(
+export default (world, pos, size) => {
+    const initialSpider = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
-        {
-            label: 'Floor',
-            isStatic: true
-        }
+        { label: 'Spider' }
     )
-    Matter.World.add(world, initialFloor)
+
+    Matter.World.add(world, initialSpider)
 
     return {
-        body: initialFloor,
-        color,
+        body: initialSpider,
+        health: 30,
+        color: 'red',
         pos,
-        renderer: <Floor />
+        renderer: <Spider />
     }
 }
 

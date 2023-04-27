@@ -5,8 +5,9 @@ export default (state, screen) => {
     if (!state) return null;
     return (
         <View style={{
-            marginLeft: state.Camera.position.x,
-            marginTop: state.Camera.position.y
+            position: 'absolute',
+            left: state.Camera.position.x,
+            top: state.Camera.position.y,
         }}>
             {Object.keys(state)
                 .filter(key => state[key].renderer)

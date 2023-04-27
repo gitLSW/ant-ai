@@ -11,15 +11,10 @@ const Ant = props => {
     const xBody = props.body.position.x - widthBody / 2
     const yBody = props.body.position.y - heightBody / 2
 
-    const color = props.color;
-
     return (
         <Image
             source={ant}
             style={{
-                // borderWidth: 1,
-                // borderColor: color,
-                // borderStyle: 'solid',
                 position: 'absolute',
                 left: xBody,
                 top: yBody,
@@ -29,7 +24,7 @@ const Ant = props => {
     )
 }
 
-export default (world, color, pos, size) => {
+export default (world, pos, size) => {
     const initialAnt = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
@@ -42,7 +37,7 @@ export default (world, color, pos, size) => {
 
     return {
         body: initialAnt,
-        color,
+        health: 10,
         pos,
         renderer: <Ant />
     }

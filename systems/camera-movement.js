@@ -1,4 +1,4 @@
-export default CameraMovement = (entities, { touches }) => {
+export default (entities, { touches }) => {
     
     touches.filter(t => t.type === "move").forEach(t => {
         entities.Camera.position.x += t.delta.pageX
