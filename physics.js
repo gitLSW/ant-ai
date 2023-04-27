@@ -1,48 +1,22 @@
-import Matter from "matter-js";
-// import { getPipeSizePosPair } from "./utils/random";
-import { Dimensions } from 'react-native'
-
-const windowHeight = Dimensions.get('window').height
-const windowWidth = Dimensions.get('window').width
+import Matter from "matter-js"
 
 const Physics = (entities, { touches, time, dispatch }) => {
-    let engine = entities.physics.engine
-
-    // console.log(touches)
-
-    // touches.filter(t => t.type === 'press')
-    //     .forEach(t => {
-    //         console.log(t)
-
-    //         Matter.Body.setVelocity(entities.Bird.body, {
-    //             x: 0,
-    //             y: -8
-    //         })
-    //     })
+    const engine = entities.physics.engine
 
     // From this we can calculate the position of each object for the ant
     // console.log(Object.values(entities).map(val => val?.body?.position))
 
     touches.filter(t => t.type === "move").forEach(t => {
-        // console.log(t)
+        // console.log(t.event.locationX, t.event.locationY)
+        // console.log(t.event.pageX, t.event.pageY)
 
-        // const xDir = ((t.delta.pageX != 0) ? (t.delta.pageX / Math.abs(t.delta.pageX)) : 0)
-        // const yDir = ((t.delta.pageY != 0) ? (t.delta.pageY / Math.abs(t.delta.pageY)) : 0)
 
-        // console.log(xDir, yDir)
+        entities.Camera.position.x += t.delta.pageX
+        entities.Camera.position.y += t.delta.pageY
 
-        // Matter.Body.setVelocity(entities.Bird.body, {
-        //     x: xDir,
-        //     y: yDir,
-        // })
 
-        // console.log(entities.Ant.body)
-
-        Matter.Body.setPosition(entities.Ant1.body, {
-            x: entities.Ant1.body.position.x + t.delta.pageX,
-            y: entities.Ant1.body.position.y + t.delta.pageY
-        })
-    });
+        Matter.Body.setPosition(entities.Ant1.body, entities.Camera.position)
+    })
 
     Matter.Engine.update(engine, time.delta)
 
@@ -68,10 +42,30 @@ const Physics = (entities, { touches, time, dispatch }) => {
     // }
 
 
-    Matter.Events.on(engine, 'collisionStart', (event) => {
-        // dispatch({ type: 'game_over' })
+    Matter.Events.on(engine, 'collisionStart', event => {
+        const collisionPairs = event.pairs.map(pair => { return { a: pair.bodyA.label, b: pair.bodyB.label } })
+        const deaths = [...new Set(collisionPairs.map(pair => {
+            if (pair.a.startsWith('ant') && pair.b.startsWith('spider') ||
+                pair.a.startsWith('spider') && pair.b.startsWith('ant')) {
+                return (a === 'ant') ? a : b
+            }
+
+            return null
+        })
+            .filter(Boolean))] // We need the IDs
+
+        // console.log(deaths)
+
+        // deaths.forEach(death => {
+        //     const removeIndex = Object.entries(entities).findIndex(entry => entity.value.label === death))
+        //     delete entities[]
+        // })
+
+        // TODO: Points
+
+        // dispatch({ type: 'game_over', points: 10 })
     })
-    
+
     return entities;
 }
 export default Physics

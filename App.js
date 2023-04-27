@@ -1,9 +1,10 @@
-import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { GameEngine } from 'react-native-game-engine';
-import entities from './entities';
-import Physics from './physics';
+import { StatusBar } from 'expo-status-bar'
+import React, { useState, useEffect } from 'react'
+import { Text, TouchableOpacity, View } from 'react-native'
+import { GameEngine } from 'react-native-game-engine'
+import entities from './entities'
+import Physics from './physics'
+import CameraRenderer from './camera-renderer'
 
 export default function App() {
   const [running, setRunning] = useState(false)
@@ -24,9 +25,12 @@ export default function App() {
       <GameEngine
         ref={(ref) => { setGameEngine(ref) }}
         systems={[Physics]}
+        renderer={CameraRenderer}
         entities={entities()}
         running={running}
         onEvent={(e) => {
+          // console.log(e.points)
+
           switch (e.type) {
             case 'game_over':
               setRunning(false)
@@ -55,7 +59,6 @@ export default function App() {
               START GAME
             </Text>
           </TouchableOpacity>
-
         </View> : null}
     </View>
   );

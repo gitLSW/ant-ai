@@ -25,13 +25,13 @@ const Enemy = props => {
     )
 }
 
-export default (world, label, color, pos, size) => {
+export default (world, color, pos, size) => {
     const initialEnemy = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
-        { label }
+        { label: 'Spider' }
     )
 
     Matter.World.add(world, initialEnemy)
