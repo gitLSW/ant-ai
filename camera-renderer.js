@@ -1,16 +1,12 @@
 import React, { Component } from "react";
 import { View } from "react-native";
-import { Dimensions } from "react-native";
-
-const windowW = Dimensions.get('window').width
-const windowH = Dimensions.get('window').width
 
 export default (state, screen) => {
     if (!state) return null;
     return (
         <View style={{
-            marginLeft: state.Camera.position.x - windowW / 2,
-            marginTop: state.Camera.position.y - windowH / 2
+            marginLeft: state.Camera.position.x + screen.width / 2,
+            marginTop: state.Camera.position.y + screen.height / 2
         }}>
             {Object.keys(state)
                 .filter(key => state[key].renderer)

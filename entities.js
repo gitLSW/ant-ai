@@ -1,9 +1,9 @@
 import Matter from "matter-js"
-import Ant from "./components/Ant";
-import Floor from "./components/Floor";
-import Obstacle from "./components/Obstacle";
-import Ressource from './components/Ressource';
-import Enemy from './components/Enemy';
+import Ant from "./entities/Ant";
+import Floor from "./entities/Floor";
+import Obstacle from "./entities/Obstacle";
+import Ressource from './entities/Ressource';
+import Enemy from './entities/Enemy';
 import { getRandomCoordiante } from "./utils/random";
 
 const levelHeight = 400
