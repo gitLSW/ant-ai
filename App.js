@@ -7,17 +7,26 @@ import CameraMovement from './systems/camera-movement'
 import AiControl from './systems/ai-control'
 import Game from './systems/game'
 import CameraRenderer from './camera-renderer'
+import useKeyPress from './systems/key-press-register'
 
 export default function App() {
   const [running, setRunning] = useState(false)
   const [gameEngine, setGameEngine] = useState(null)
   const [currentPoints, setCurrentPoints] = useState(0)
 
+  useKeyPress(['w', 'a', 's', 'd'], event => {
+    console.log(event)
+
+    if (gameEngine) {
+      gameEngine.dispatch({ type: 'keypress', key: event.key })
+    }
+  })
+
   // Only runs once on Load
   useEffect(() => {
     setRunning(false)
   }, [])
-  
+
   return (
     <View style={{ flex: 1 }}>
       {/* Hud */}
@@ -25,12 +34,12 @@ export default function App() {
 
       {/* Game */}
       <GameEngine
-        ref={(ref) => { setGameEngine(ref) }}
+        ref={ref => { setGameEngine(ref) }}
         systems={[CameraMovement, AiControl, Game]}
         renderer={CameraRenderer}
         entities={entities()}
         running={running}
-        onEvent={(e) => {
+        onEvent={e => {
           // console.log(e.points)
 
           switch (e.type) {
@@ -40,6 +49,8 @@ export default function App() {
               break;
             case 'new_point':
               setCurrentPoints(currentPoints + 1)
+              break;
+            default:
               break;
           }
         }}
