@@ -8,15 +8,12 @@ export default function useKeyPress(keys, callback, node = null) {
     });
 
     // handle what happens on key press
-    const handleKeyPress = useCallback(
-        (event) => {
-            // check if one of the key is part of the ones we want
-            if (keys.some(key => event.key === key)) {
-                callbackRef.current(event);
-            }
-        },
-        [keys]
-    );
+    const handleKeyPress = useCallback(event => {
+        // check if one of the key is part of the ones we want
+        if (keys.some(key => event.key === key)) {
+            callbackRef.current(event);
+        }
+    }, [keys]);
 
     useEffect(() => {
         // target is either the provided node or the document

@@ -15,12 +15,11 @@ export default function App() {
   const [currentPoints, setCurrentPoints] = useState(0)
 
   useKeyPress(['w', 'a', 's', 'd'], event => {
-    console.log(event)
-
     if (gameEngine) {
       gameEngine.dispatch({ type: 'keypress', key: event.key })
     }
   })
+
 
   // Only runs once on Load
   useEffect(() => {

@@ -2,6 +2,7 @@ const cameraMovementSpeed = 10
 
 export default (entities, { touches, events }) => {
     if (events?.length) {
+        console.log(events)
         events
             .filter(event => event.type === 'keypress')
             .forEach(event => {
@@ -17,6 +18,8 @@ export default (entities, { touches, events }) => {
                         break
                     case 'd':
                         entities.Camera.position.x -= cameraMovementSpeed
+                        break
+                    default:
                         break
                 }
             })
