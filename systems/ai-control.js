@@ -1,6 +1,6 @@
 import Matter from "matter-js"
 
-export default (entities, { touches }) => {
+export default (entities) => {
     async function calcSightVector() {
         const ants = Object.entries(entities).filter(entity => entity[0].startsWith('Ant')).map(entry => entry[1])
         const spiders = Object.entries(entities).filter(entity => entity[0].startsWith('Spider')).map(entry => entry[1])

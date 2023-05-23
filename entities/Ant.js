@@ -1,7 +1,6 @@
 import Matter from 'matter-js'
 import React from 'react'
 import { Image } from 'react-native'
-
 const ant = require('../assets/ant.png')
 
 const Ant = props => {
