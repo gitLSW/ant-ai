@@ -8,6 +8,7 @@ import AiControl from './systems/ai-control'
 import Game from './systems/game'
 import CameraRenderer from './camera-renderer'
 import useKeyPress from './systems/key-press-register'
+const background = require('./assets/floor.png')
 
 export default function App() {
   const [running, setRunning] = useState(false)
@@ -57,6 +58,11 @@ export default function App() {
       >
         <StatusBar style="auto" hidden={true} />
       </GameEngine>
+
+      {/* TODO: CSS REPEATING IMAGE BACKGROUND */}
+      <View style={{
+        absolute: true
+      }}></View>
 
       {/* Menu */}
       {!running ?

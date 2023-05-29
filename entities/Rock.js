@@ -2,9 +2,8 @@ import Matter from 'matter-js'
 import React from 'react'
 import { Image } from 'react-native'
 const stone = require('../assets/stone.png')
-const leaf = require('../assets/leaf.png')
 
-const Obstacle = props => {
+const Rock = props => {
     const widthBody = props.body.bounds.max.x - props.body.bounds.min.x
     const heightBody = props.body.bounds.max.y - props.body.bounds.min.y
 
@@ -12,12 +11,6 @@ const Obstacle = props => {
     const yBody = props.body.position.y - heightBody / 2
 
     // const color = props.color;
-
-    // function getRandom(min, max) {
-    //     min = Math.ceil(min);
-    //     max = Math.floor(max);
-    //     return Math.floor(Math.random() * (max - min + 1)) + min;
-    // }
 
     return (
         <Image
@@ -39,7 +32,7 @@ export default (world, pos, size) => {
         size.width,
         size.height,
         {
-            label: 'Obstacle',
+            label: 'Rock',
             isStatic: true
         }
     )
@@ -50,7 +43,7 @@ export default (world, pos, size) => {
         body: initialObstacle,
         color: 'brown',
         pos,
-        renderer: <Obstacle />
+        renderer: <Rock />
     }
 }
 
