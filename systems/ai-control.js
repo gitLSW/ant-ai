@@ -29,7 +29,7 @@ export default (entities) => {
 
             // Matter.Body.setVelocity(ant.body, destination.dir)
 
-            console.log(destination)
+            //console.log(destination)
         }
     }
 

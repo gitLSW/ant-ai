@@ -2,7 +2,7 @@ const cameraMovementSpeed = 10
 
 export default (entities, { touches, events }) => {
     if (events?.length) {
-        console.log(events)
+        
         events
             .filter(event => event.type === 'keypress')
             .forEach(event => {
