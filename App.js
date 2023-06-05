@@ -47,8 +47,8 @@ export default function App() {
               setRunning(false)
               gameEngine.stop()
               break;
-            case 'new_point':
-              setCurrentPoints(currentPoints + 1)
+            case 'points':
+              setCurrentPoints(currentPoints + e.points)
               break;
             default:
               break;

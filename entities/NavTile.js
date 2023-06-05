@@ -26,22 +26,28 @@ const NavTile = props => {
 }
 
 export default (world, pos, size) => {
-    const initialObstacle = Matter.Bodies.rectangle(
+    const initial = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
         {
             label: 'NavTile',
-            isStatic: true
+            isSensor: true
         }
     )
 
-    Matter.World.add(world, initialObstacle)
+    // turns off collisions
+    initial.collisionFilter = {
+        'group': -1,
+        'category': 2,
+        'mask': 0,
+    };
+
+    Matter.World.add(world, initial)
 
     return {
-        body: initialObstacle,
-        color: 'black',
+        body: initial,
         pos,
         renderer: <NavTile />
     }

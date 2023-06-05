@@ -1,6 +1,7 @@
 import Matter from 'matter-js'
 import React from 'react'
-import { View } from 'react-native'
+import { Image } from 'react-native'
+const spider = require('../assets/spider.png')
 
 const Spider = props => {
     const widthBody = props.body.bounds.max.x - props.body.bounds.min.x
@@ -9,19 +10,18 @@ const Spider = props => {
     const xBody = props.body.position.x - widthBody / 2
     const yBody = props.body.position.y - heightBody / 2
 
-    const color = props.color;
+    // const color = props.color;
 
     return (
-        <View style={{
-            borderWidth: 1,
-            borderColor: color,
-            borderStyle: 'solid',
-            position: 'absolute',
-            left: xBody,
-            top: yBody,
-            width: widthBody,
-            height: heightBody
-        }} />
+        <Image
+            source={spider}
+            style={{
+                position: 'absolute',
+                left: xBody,
+                top: yBody,
+                width: widthBody,
+                height: heightBody
+            }} />
     )
 }
 
@@ -39,7 +39,6 @@ export default (world, pos, size) => {
     return {
         body: initialSpider,
         health: 30,
-        color: 'red',
         pos,
         renderer: <Spider />
     }

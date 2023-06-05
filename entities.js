@@ -5,6 +5,7 @@ import Leaf from "./entities/Leaf";
 import Ressource from './entities/Ressource';
 import Spider from './entities/Spider';
 import NavTile from './entities/NavTile';
+import Anthill from "./entities/Anthill";
 import { getRandom, getRandomCoordiante } from "./utils/random";
 
 const levelHeight = 1000
@@ -25,7 +26,6 @@ export default restart => {
         // WestBorder: Obstacle(world, { x: 0, y: levelHeight / 2 }, { height: levelHeight, width: 50 })
     }
 
-    
     const navTileSize = { width: 50, height: 50 }
     const obstacleSize = { width: 50, height: 50 }
     const spiderSize = { width: 15, height: 15 }
@@ -37,44 +37,43 @@ export default restart => {
     for (let i = 0; i < 20; i++) {
         for (let j = 0; j < 20; j++) {
             let random = getRandom(0, 10)
-            if((random ==  1 || random == 2)){
-                
-                entities[`ImpNavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, {x : (i * 50) + 25, y : (j * 50) + 25}, navTileSize)        
-                entities[`Rock${rockIndex}`] = Rock(world, {x : (i * 50) + 25, y : (j * 50) + 25}, obstacleSize)
+            if ((random == 1 || random == 2)) {
+                entities[`ImpNavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
+                entities[`Rock${rockIndex}`] = Rock(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, obstacleSize)
                 rockIndex++
-                
+
             }
-            else if(random == 3){
-                
-                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, {x : (i * 50) + 25, y : (j * 50) + 25}, navTileSize)        
-                entities[`Spider${spiderIndex}`] = Spider(world, {x : (i * 50) + 25, y : (j * 50) + 25}, spiderSize)
+            else if (random == 3) {
+                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
+                entities[`Spider${spiderIndex}`] = Spider(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, spiderSize)
                 spiderIndex++
-                
+
             }
-            else if(random == 4){
-                
-                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, {x : (i * 50) + 25, y : (j * 50) + 25}, navTileSize)        
-                entities[`Leaf${leafIndex}`] = Leaf(world, {x : (i * 50) + 25, y : (j * 50) + 25}, obstacleSize)
+            else if (random == 4) {
+                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
+                entities[`Leaf${leafIndex}`] = Leaf(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, obstacleSize)
                 leafIndex++
-                
+
             }
-            else if(random == 5){
-                
-                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, {x : (i * 50) + 25, y : (j * 50) + 25}, navTileSize)        
-                entities[`Ressource${resourceIndex}`] = Ressource(world, 'Ressource', {x : (i * 50) + 25, y : (j * 50) + 25}, resourceSize)
+            else if (random == 5) {
+                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
+                entities[`Ressource${resourceIndex}`] = Ressource(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, resourceSize)
                 resourceIndex++
-                
+
             }
-            else{
-                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, {x : (i * 50) + 25, y : (j * 50) + 25}, navTileSize)
+            else {
+                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
             }
-            
         }
     }
+
     const antSize = { height: 8, width: 8 }
-    const colonyPos = { x: levelWidth / 2, y: levelHeight / 2 }
+    const anthillPos = { x: levelWidth / 2, y: levelHeight / 2 }
+
+    entities[`Hill`] = Anthill(world, anthillPos, { height: 300, width: 300 }, 1)
+
     // for (let index = 1; index <= 15; index++) {
-        entities[`Ant${1}`] = Ant(world, colonyPos, antSize)
+    entities[`Ant${1}`] = Ant(world, anthillPos, antSize)
     // }  
 
     return {

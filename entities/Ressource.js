@@ -10,7 +10,7 @@ const Ressource = props => {
     const xBody = props.body.position.x - widthBody / 2
     const yBody = props.body.position.y - heightBody / 2
 
-    const color = props.color;
+    // const color = props.color;
 
     return (
         <Image
@@ -25,14 +25,14 @@ const Ressource = props => {
     )
 }
 
-export default (world, label, pos, size) => {
+export default (world, pos, size) => {
     const initialRessource = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
         {
-            label,
+            label: 'Ressource',
             isStatic: true
         }
     )
@@ -41,7 +41,6 @@ export default (world, label, pos, size) => {
 
     return {
         body: initialRessource,
-        color: 'yellow',
         pos,
         renderer: <Ressource />
     }

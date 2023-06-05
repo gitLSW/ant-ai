@@ -42,7 +42,6 @@ export default (world, pos, size) => {
 
     return {
         body: initialObstacle,
-        color: 'brown',
         pos,
         renderer: <Leaf />
     }
