@@ -53,7 +53,7 @@ const Border = props => {
 }
 
 export default (world, pos, size) => {
-    const initialObstacle = Matter.Bodies.rectangle(
+    const initial = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
@@ -64,10 +64,10 @@ export default (world, pos, size) => {
         }
     )
 
-    // Matter.World.add(world, initialObstacle)
+    Matter.World.add(world, initial)
 
     return {
-        body: initialObstacle,
+        body: initial,
         pos,
         renderer: <Border />
     }

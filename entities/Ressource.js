@@ -25,22 +25,22 @@ const Ressource = props => {
     )
 }
 
-export default (world, pos, size) => {
-    const initialRessource = Matter.Bodies.rectangle(
+export default (world, pos, size, index) => {
+    const inital = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
         {
-            label: 'Ressource',
+            label: `Ressource_${index}`,
             isStatic: true
         }
     )
 
-    Matter.World.add(world, initialRessource)
+    Matter.World.add(world, inital)
 
     return {
-        body: initialRessource,
+        body: inital,
         pos,
         renderer: <Ressource />
     }

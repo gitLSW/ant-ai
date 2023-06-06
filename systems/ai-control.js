@@ -174,44 +174,50 @@ let firstTime = false
 let entity = null
 
 export default (entities) => {
-    if (!firstTime) {
-        let tiles = []
-        let pos = 0
+    // if (!firstTime) {
+    //     let tiles = []
+    //     let pos = 0
 
-        for (let i = 0; i < 20; i++) {
-            tiles.push([])
+    //     for (let i = 0; i < 20; i++) {
+    //         tiles.push([])
 
-            for (let j = 0; j < 20; j++) {
-                let tile = null
-                let name = ((i * 50) + 25) + "_" + ((j * 50) + 25)
-                //cObject.entries(entities).filter(entity => entity[0].startsWith('Spider')).map(entry => entry[1])
-                if (Object.entries(entities).find(e => e[0].startsWith("ImpNavTile" + name)) != undefined) {
-                    tile = new Tile({ x: (i * 50) + 25, y: (j * 50) + 25 }, false)
-                }
-                else {
-                    tile = new Tile({ x: (i * 50) + 25, y: (j * 50) + 25 }, true)
-                }
-                tiles[pos].push(tile)
-            }
-            pos++
-        }
+    //         for (let j = 0; j < 20; j++) {
+    //             let tile = null
+    //             let name = ((i * 50) + 25) + "_" + ((j * 50) + 25)
+    //             //cObject.entries(entities).filter(entity => entity[0].startsWith('Spider')).map(entry => entry[1])
+    //             if (Object.entries(entities).find(e => e[0].startsWith("ImpNavTile" + name)) != undefined) {
+    //                 tile = new Tile({ x: (i * 50) + 25, y: (j * 50) + 25 }, false)
+    //             }
+    //             else {
+    //                 tile = new Tile({ x: (i * 50) + 25, y: (j * 50) + 25 }, true)
+    //             }
+    //             tiles[pos].push(tile)
+    //         }
+    //         pos++
+    //     }
 
-        firstTime = true
-        navManager = new NavManager(tiles)
+    //     firstTime = true
+    //     navManager = new NavManager(tiles)
 
-        let current_pos = { x: entities["Ant1"].body.position.x, y: entities["Ant1"].body.position.y };
-        let target_pos = { x: 0, y: 0 }
+    //     let current_pos = { x: entities["Ant1"].body.position.x, y: entities["Ant1"].body.position.y };
+    //     let target_pos = { x: 0, y: 0 }
 
-        entity = new Entity(current_pos)
-        navManager.cleanUp();
-        let path = navManager.FindPath(current_pos, target_pos)
-        entity.setPath(target_pos, path)
-    }
+    //     entity = new Entity(current_pos)
+    //     navManager.cleanUp();
+    //     let path = navManager.FindPath(current_pos, target_pos)
+    //     entity.setPath(target_pos, path)
+    // }
 
-    entity.Update()
+    // entity.Update()
 
-    entities["Ant1"].body.position.x = entity.current_pos.x
-    entities["Ant1"].body.position.y = entity.current_pos.y
+    // entities["Ant1"].body.position.x = entity.current_pos.x
+    // entities["Ant1"].body.position.y = entity.current_pos.y
+    
+
+
+
+
+
     
     // async function calcSightVector() {
     //     const ants = Object.entries(entities).filter(entity => entity[0].startsWith('Ant')).map(entry => entry[1])

@@ -25,17 +25,14 @@ const Leaf = props => {
     )
 }
 
-export default (world, pos, size) => {
+export default (world, pos, size, index) => {
     // TODO: Cmd Click on .rectangle to create see the .polygon function
     const initialObstacle = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
-        {
-            label: 'Rock',
-            isStatic: true
-        }
+        { label: `Leaf_${index}` }
     )
 
     Matter.World.add(world, initialObstacle)

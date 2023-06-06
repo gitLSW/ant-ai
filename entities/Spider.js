@@ -25,19 +25,19 @@ const Spider = props => {
     )
 }
 
-export default (world, pos, size) => {
-    const initialSpider = Matter.Bodies.rectangle(
+export default (world, pos, size, index) => {
+    const inital = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
-        { label: 'Spider' }
+        { label: `Spider_${index}` }
     )
 
-    Matter.World.add(world, initialSpider)
+    Matter.World.add(world, inital)
 
     return {
-        body: initialSpider,
+        body: inital,
         health: 30,
         pos,
         renderer: <Spider />

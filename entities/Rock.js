@@ -25,22 +25,22 @@ const Rock = props => {
     )
 }
 
-export default (world, pos, size) => {
-    const initialObstacle = Matter.Bodies.rectangle(
+export default (world, pos, size, index) => {
+    const inital = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
         {
-            label: 'Rock',
+            label: `Rock_${index}`,
             isStatic: true
         }
     )
 
-    Matter.World.add(world, initialObstacle)
+    Matter.World.add(world, inital)
 
     return {
-        body: initialObstacle,
+        body: inital,
         pos,
         renderer: <Rock />
     }

@@ -9,6 +9,7 @@ import Game from './systems/game'
 import CameraRenderer from './camera-renderer'
 import useKeyPress from './systems/key-press-register'
 const background = require('./assets/floor.png')
+const worldSize = { width: 1000, height: 1000 }
 
 export default function App() {
   const [running, setRunning] = useState(false)
@@ -30,14 +31,14 @@ export default function App() {
   return (
     <View style={{ flex: 1 }}>
       {/* Hud */}
-      <Text style={{ textAlign: 'center', fontSize: 40, fontWeight: 'bold', margin: 20 }}>{currentPoints}</Text>
+      <Text style={{ textAlign: 'center', fontSize: 40, fontWeight: 'bold', margin: 20, zIndex: 100 }}>{currentPoints}</Text>
 
       {/* Game */}
       <GameEngine
         ref={ref => { setGameEngine(ref) }}
         systems={[CameraMovement, AiControl, Game]}
         renderer={CameraRenderer}
-        entities={entities()}
+        entities={entities(worldSize)}
         running={running}
         onEvent={e => {
           // console.log(e.points)
@@ -48,7 +49,7 @@ export default function App() {
               gameEngine.stop()
               break;
             case 'points':
-              setCurrentPoints(currentPoints + e.points)
+              setCurrentPoints(e.points)
               break;
             default:
               break;
@@ -60,9 +61,16 @@ export default function App() {
       </GameEngine>
 
       {/* TODO: CSS REPEATING IMAGE BACKGROUND */}
-      <View style={{
-        absolute: true
-      }}></View>
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        width: worldSize.width,
+        height: worldSize.height,
+        backgroundImage: `url(${background})`,
+        backgroundRepeat: 'space',
+        backgroundSize: '250px auto',
+        zIndex: -100
+      }}></div>
 
       {/* Menu */}
       {!running ?

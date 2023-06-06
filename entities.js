@@ -4,14 +4,10 @@ import Rock from "./entities/Rock";
 import Leaf from "./entities/Leaf";
 import Ressource from './entities/Ressource';
 import Spider from './entities/Spider';
-import NavTile from './entities/NavTile';
 import Anthill from "./entities/Anthill";
 import { getRandom, getRandomCoordiante } from "./utils/random";
 
-const levelHeight = 1000
-const levelWidth = 1000
-
-export default restart => {
+export default worldSize => {
     let engine = Matter.Engine.create({ enableSleeping: false })
 
     let world = engine.world
@@ -20,60 +16,51 @@ export default restart => {
 
     const entities = {
         physics: { engine, world },
-        // NorthBorder: Obstacle(world, { x: levelWidth / 2, y: 0 }, { height: 50, width: levelWidth }),
-        // EastBorder: Obstacle(world, { x: levelWidth, y: levelHeight / 2 }, { height: levelHeight, width: 50 }),
-        // SouthBorder: Obstacle(world, { x: levelWidth / 2, y: levelHeight }, { height: 50, width: levelWidth }),
-        // WestBorder: Obstacle(world, { x: 0, y: levelHeight / 2 }, { height: levelHeight, width: 50 })
+        // NorthBorder: Obstacle(world, { x: worldSize.width / 2, y: 0 }, { height: 50, width: worldSize.width }),
+        // EastBorder: Obstacle(world, { x: worldSize.width, y: worldSize.height / 2 }, { height: worldSize.height, width: 50 }),
+        // SouthBorder: Obstacle(world, { x: worldSize.width / 2, y: worldSize.height }, { height: 50, width: worldSize.width }),
+        // WestBorder: Obstacle(world, { x: 0, y: worldSize.height / 2 }, { height: worldSize.height, width: 50 })
     }
 
-    const navTileSize = { width: 50, height: 50 }
     const obstacleSize = { width: 50, height: 50 }
-    const spiderSize = { width: 15, height: 15 }
+    const spiderSize = { width: 45, height: 45 }
     const resourceSize = { width: 50, height: 50 }
     let rockIndex = 0
     let spiderIndex = 0
     let resourceIndex = 0
     let leafIndex = 0
-    for (let i = 0; i < 20; i++) {
-        for (let j = 0; j < 20; j++) {
-            let random = getRandom(0, 10)
-            if ((random == 1 || random == 2)) {
-                entities[`ImpNavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
-                entities[`Rock${rockIndex}`] = Rock(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, obstacleSize)
-                rockIndex++
-
-            }
-            else if (random == 3) {
-                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
-                entities[`Spider${spiderIndex}`] = Spider(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, spiderSize)
-                spiderIndex++
-
-            }
-            else if (random == 4) {
-                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
-                entities[`Leaf${leafIndex}`] = Leaf(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, obstacleSize)
-                leafIndex++
-
-            }
-            else if (random == 5) {
-                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
-                entities[`Ressource${resourceIndex}`] = Ressource(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, resourceSize)
-                resourceIndex++
-
-            }
-            else {
-                entities[`NavTile${(i * 50) + 25}_${(j * 50) + 25}`] = NavTile(world, { x: (i * 50) + 25, y: (j * 50) + 25 }, navTileSize)
-            }
+    for (let i = 0; i < 150; i++) {
+        let random = getRandom(0, 10)
+        if ((random == 1 || random == 2)) {
+            const rock = Rock(world, getRandomCoordiante(worldSize), obstacleSize, rockIndex)
+            entities[rock.body.label] = rock
+            rockIndex++
+        }
+        else if (random == 3) {
+            const spider = Spider(world, getRandomCoordiante(worldSize), spiderSize, spiderIndex)
+            entities[spider.body.label] = spider
+            spiderIndex++
+        }
+        else if (random == 4) {
+            const leaf = Leaf(world, getRandomCoordiante(worldSize), obstacleSize, leafIndex)
+            entities[leaf.body.label] = leaf
+            leafIndex++
+        }
+        else if (random == 5) {
+            const ressource = Ressource(world, getRandomCoordiante(worldSize), resourceSize, resourceIndex)
+            entities[ressource.body.label] = ressource
+            resourceIndex++
         }
     }
 
     const antSize = { height: 8, width: 8 }
-    const anthillPos = { x: levelWidth / 2, y: levelHeight / 2 }
+    const anthillPos = { x: worldSize.width / 2, y: worldSize.height / 2 }
 
-    entities[`Hill`] = Anthill(world, anthillPos, { height: 300, width: 300 }, 1)
+    entities[`Hill`] = Anthill(world, anthillPos, { height: 200, width: 200 }, 1)
 
     // for (let index = 1; index <= 15; index++) {
-    entities[`Ant${1}`] = Ant(world, anthillPos, antSize)
+            const ant = Ant(world, anthillPos, antSize, 0)
+            entities[ant.body.label] = ant
     // }  
 
     return {

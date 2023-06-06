@@ -23,13 +23,13 @@ const Ant = props => {
     )
 }
 
-export default (world, pos, size) => {
+export default (world, pos, size, index) => {
     const initialAnt = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
-        { label: 'Ant' }
+        { label: `Ant_${index}` }
     )
 
     Matter.World.add(world, initialAnt)
@@ -41,4 +41,3 @@ export default (world, pos, size) => {
         renderer: <Ant />
     }
 }
-
