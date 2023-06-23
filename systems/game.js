@@ -3,7 +3,6 @@ import aiUpdate from "./ai-control"
 
 var currentPoints = 0
 var cleanedUp = false
-var completedCollIDs = []
 
 export default (entities, { time, dispatch, events }) => {
     // Testing
@@ -63,12 +62,15 @@ export default (entities, { time, dispatch, events }) => {
         })
     }
 
-    Matter.Events.on(engine, 'collisionStart', event => {
-        var antVision = {} // { antID: [CollisonData]} => CollisonData = { type, dx, dy }
+    var antVision = {} // { antID: [CollisonData]} => CollisonData = { type, dx, dy }
+    var completedCollIDs = []
 
+    Matter.Events.on(engine, 'collisionStart', event => {
         event.pairs.forEach(pair => {
             if (completedCollIDs.includes(pair.id)) {
                 return
+            } else {
+                completedCollIDs.push(pair.id)
             }
 
             const aID = pair.bodyA.label
@@ -94,8 +96,18 @@ export default (entities, { time, dispatch, events }) => {
                     otherType = aType
                 }
 
-                const collData = { type: otherType, dx: otherPos.x - antPos.x, dy: otherPos.y - antPos.y }
-                antVision[`Ant_${antIndex}`] = [...(antVision[`Ant_${antIndex}`] ?? []), collData]
+                const collData = { id: pair.id, type: otherType, dx: otherPos.x - antPos.x, dy: otherPos.y - antPos.y }
+
+                var currentAntVision = antVision[`Ant_${antIndex}`] ?? []
+
+                const index = currentAntVision.findIndex(coll => coll.id === pair.id)
+                if (0 <= index) {
+                    currentAntVision[index] = collData
+                } else {
+                    currentAntVision.push(collData)
+                }
+
+                antVision[`Ant_${antIndex}`] = currentAntVision
             }
 
             if (hasAnt && hasRessource) {
@@ -123,11 +135,10 @@ export default (entities, { time, dispatch, events }) => {
                 currentPoints -= 10
                 dispatch({ type: 'points', points: currentPoints })
             }
-
-            completedCollIDs.push(pair.id)
         })
 
-        Object.entries(antVision).forEach(async entry => aiUpdate(entities[entry[0]], entry[1]))
+        console.log(antVision)
+        // Object.entries(antVision).forEach(async entry => aiUpdate(entities[entry[0]], entry[1]))
     })
 
     if (currentPoints < 20) {

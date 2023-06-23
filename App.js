@@ -9,7 +9,8 @@ import Game from './systems/game'
 import CameraRenderer from './camera-renderer'
 import useKeyPress from './systems/key-press-register'
 const background = require('./assets/floor.png')
-const worldSize = { width: 1000, height: 1000 }
+
+export const WORLD_SIZE = { width: 1000, height: 1000 }
 
 export default function App() {
   const [running, setRunning] = useState(false)
@@ -38,7 +39,7 @@ export default function App() {
         ref={ref => { setGameEngine(ref) }}
         systems={[CameraMovement, Game]}
         renderer={CameraRenderer}
-        entities={entities(worldSize)}
+        entities={entities(WORLD_SIZE)}
         running={running}
         onEvent={e => {
           // console.log(e.points)
@@ -64,8 +65,8 @@ export default function App() {
       <div style={{
         position: 'absolute',
         top: 0, left: 0, right: 0, bottom: 0,
-        width: worldSize.width,
-        height: worldSize.height,
+        width: WORLD_SIZE.width,
+        height: WORLD_SIZE.height,
         backgroundImage: `url(${background})`,
         backgroundRepeat: 'space',
         backgroundSize: '250px auto',
