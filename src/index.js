@@ -22,16 +22,27 @@ function sleep(ms) {
 // console.log(ant)
 // console.log(ant.objectName())
 
-win.children()
-    .forEach(child => {
-        console.log(child?.objectName(), child?.pos())
-    })
+async function startGame() {
+    while (true) {
+        win.children()
+            .forEach(child => {
+                if (!child) {
+                    return
+                }
 
-// async function startGame() {
-//     // while (true) {
+                const id = child.objectName()
+                const type = id.split('_')[0]
+                const pos = child.pos()
 
-//     //     await sleep(15)
-//     // }
-// }
+                if (type === 'Ant') {
+                    child.move(pos.x, pos.y + 5)
+                } else if (type === 'Spider') {
+                    child.move(pos.x + 5, pos.y)
+                }
+            })
 
-// startGame()
+        await sleep(15)
+    }
+}
+
+startGame()
