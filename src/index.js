@@ -14,35 +14,34 @@ populateField(win, worldSize)
 win.show()
 global.win = win
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+// Game RunLoop
+const speed = 5
+var dir = 1
 
-// const ant = win.childAt(worldSize.width / 2, worldSize.height / 2)
-// console.log(ant)
-// console.log(ant.objectName())
+function gameLoop() {
+    try {
+        win.children().forEach(child => {
+            if (!child) {
+                return;
+            }
 
-async function startGame() {
-    while (true) {
-        win.children()
-            .forEach(child => {
-                if (!child) {
-                    return
-                }
+            const id = child.objectName();
+            const type = id.split('_')[0];
+            const pos = child.pos();
 
-                const id = child.objectName()
-                const type = id.split('_')[0]
-                const pos = child.pos()
+            if (worldSize.height < pos.y) {
+                dir = -1;
+            } else if (pos.y < 0) {
+                dir = 1;
+            }
 
-                if (type === 'Ant') {
-                    child.move(pos.x, pos.y + 5)
-                } else if (type === 'Spider') {
-                    child.move(pos.x + 5, pos.y)
-                }
-            })
-
-        await sleep(15)
+            if (type === 'Ant' || type === 'Spider') {
+                child.move(pos.x, pos.y + dir * speed);
+            }
+        });
+    } catch (e) {
+        console.log(e)
     }
 }
 
-startGame()
+const intervalId = setInterval(gameLoop, 30);
