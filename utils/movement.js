@@ -5,7 +5,7 @@ export const InterpolateBetweenPoints = (a, b, speed) => {
     return interpolated
 }
 
-export const DistanceBetween = (a, b) => {
+export function distance(a, b) {
     const vector = {x: (b.x - a.x), y: (b.y - a.y)}
     const distance = Math.sqrt((vector.x * vector.x) + (vector.y * vector.y))
     

@@ -24,13 +24,20 @@ const Ant = props => {
 }
 
 export default (world, pos, size, index) => {
-    const initialAnt = Matter.Bodies.rectangle(
+    const antBody = Matter.Bodies.rectangle(
         pos.x,
         pos.y,
         size.width,
         size.height,
-        { label: `Ant_${index}` }
+        { label: `AntBody_${index}` }
     )
+
+    const antSensor = Matter.Bodies.circle(pos.x, pos.y, size.width * 10, { label: `AntSensor_${index}`, isSensor: true })
+    antSensor.render.opacity = 0.2;
+    antSensor.area = 0;
+    Matter.Body.setDensity(antSensor, 0)
+
+    const initialAnt = Matter.Body.create({ parts: [antBody, antSensor], label: `Ant_${index}` });
 
     Matter.World.add(world, initialAnt)
 

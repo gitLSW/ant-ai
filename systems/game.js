@@ -1,4 +1,5 @@
 import Matter from "matter-js"
+import aiUpdate from "./ai-control"
 
 var currentPoints = 0
 var cleanedUp = false
@@ -48,10 +49,10 @@ export default (entities, { time, dispatch, events }) => {
 
                 if (!hasAnt) {
                     if (aType === 'Hill') {
-                        delete (entities[bID])
+                        delete entities[bID]
                         Matter.World.remove(world, pair.bodyB)
                     } else if (bType === 'Hill') {
-                        delete (entities[aID])
+                        delete entities[aID]
                         Matter.World.remove(world, pair.bodyA)
                     }
                 }
@@ -63,8 +64,9 @@ export default (entities, { time, dispatch, events }) => {
     }
 
     Matter.Events.on(engine, 'collisionStart', event => {
+        var antVision = {} // { antID: [CollisonData]} => CollisonData = { type, dx, dy }
+
         event.pairs.forEach(pair => {
-            console.log(pair.id)
             if (completedCollIDs.includes(pair.id)) {
                 return
             }
@@ -74,16 +76,34 @@ export default (entities, { time, dispatch, events }) => {
             const aType = aID.split('_')[0]
             const bType = bID.split('_')[0]
 
-            const hasAnt = aType === 'Ant' || bType === 'Ant'
+            const hasAntSensor = aType === 'AntSensor' || bType === 'AntSensor'
+            const hasAnt = aType === 'AntBody' || bType === 'AntBody'
             const hasSpider = aType === 'Spider' || bType === 'Spider'
             const hasRessource = aType === 'Ressource' || bType === 'Ressource'
 
+            if (hasAntSensor) {
+                var antIndex = aID.split('_')[1]
+                var antPos = pair.bodyA.position
+                var otherPos = pair.bodyB.position
+                var otherType = bType
+
+                if (bType === 'AntSensor') {
+                    antIndex = bID.split('_')[1]
+                    antPos = pair.bodyB.position
+                    otherPos = pair.bodyA.position
+                    otherType = aType
+                }
+
+                const collData = { type: otherType, dx: otherPos.x - antPos.x, dy: otherPos.y - antPos.y }
+                antVision[`Ant_${antIndex}`] = [...(antVision[`Ant_${antIndex}`] ?? []), collData]
+            }
+
             if (hasAnt && hasRessource) {
                 if (aType === 'Ressource') {
-                    delete (entities[aID])
+                    delete entities[aID]
                     Matter.World.remove(world, pair.bodyA)
                 } else if (bType === 'Ressource') {
-                    delete (entities[bID])
+                    delete entities[bID]
                     Matter.World.remove(world, pair.bodyB)
                 }
 
@@ -93,10 +113,10 @@ export default (entities, { time, dispatch, events }) => {
 
             if (hasAnt && hasSpider) {
                 if (aType === 'Spider') {
-                    delete (entities[aID])
+                    delete entities[aID]
                     Matter.World.remove(world, pair.bodyA)
                 } else if (bType === 'Spider') {
-                    delete (entities[bID])
+                    delete entities[bID]
                     Matter.World.remove(world, pair.bodyB)
                 }
 
@@ -106,6 +126,8 @@ export default (entities, { time, dispatch, events }) => {
 
             completedCollIDs.push(pair.id)
         })
+
+        Object.entries(antVision).forEach(async entry => aiUpdate(entities[entry[0]], entry[1]))
     })
 
     if (currentPoints < 20) {

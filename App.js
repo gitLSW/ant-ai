@@ -4,7 +4,7 @@ import { Text, TouchableOpacity, View } from 'react-native'
 import { GameEngine } from 'react-native-game-engine'
 import entities from './entities'
 import CameraMovement from './systems/camera-movement'
-import AiControl from './systems/ai-control'
+// import AiControl from './systems/ai-control'
 import Game from './systems/game'
 import CameraRenderer from './camera-renderer'
 import useKeyPress from './systems/key-press-register'
@@ -36,7 +36,7 @@ export default function App() {
       {/* Game */}
       <GameEngine
         ref={ref => { setGameEngine(ref) }}
-        systems={[CameraMovement, AiControl, Game]}
+        systems={[CameraMovement, Game]}
         renderer={CameraRenderer}
         entities={entities(worldSize)}
         running={running}

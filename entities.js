@@ -62,153 +62,143 @@ export default worldSize => {
     entities[`Hill`] = Anthill(world, anthillPos, { height: 200, width: 200 }, 1)
 
     // for (let index = 1; index <= 15; index++) {
-            const ant = Ant(world, anthillPos, antSize, 0)
-            entities[ant.body.label] = ant
+    const ant = Ant(world, anthillPos, antSize, 0)
+    entities[ant.body.label] = ant
     // }  
 
 
-    const levelHeight = 1000
-    const levelWidth = 1000
+    // const levelHeight = 1000
+    // const levelWidth = 1000
 
-    let width = 0.5
-    let frequency = 5
-    let chaos = 5
+    // let width = 0.5
+    // let frequency = 5
+    // let chaos = 5
 
-    let north = []
-    let south = []
-    let west = []
-    let east = []
-    for(let i = 0; i < frequency * 10; i++){
-        if(Math.random() < 0.5){
-            north[i] = Math.random() / chaos
-        }
-        else{
-            north[i] = -Math.random() / chaos
-        }
+    // let north = []
+    // let south = []
+    // let west = []
+    // let east = []
+    // for (let i = 0; i < frequency * 10; i++) {
+    //     if (Math.random() < 0.5) {
+    //         north[i] = Math.random() / chaos
+    //     }
+    //     else {
+    //         north[i] = -Math.random() / chaos
+    //     }
 
-        if(Math.random() < 0.5){
-            south[i] = Math.random() / chaos
-        }
-        else{
-            south[i] = -Math.random() / chaos
-        }
+    //     if (Math.random() < 0.5) {
+    //         south[i] = Math.random() / chaos
+    //     }
+    //     else {
+    //         south[i] = -Math.random() / chaos
+    //     }
 
-        if(Math.random() < 0.5){
-            west[i] = Math.random() / chaos
-        }
-        else{
-            west[i] = -Math.random() / chaos
-        }
+    //     if (Math.random() < 0.5) {
+    //         west[i] = Math.random() / chaos
+    //     }
+    //     else {
+    //         west[i] = -Math.random() / chaos
+    //     }
 
-        if(Math.random() < 0.5){
-            east[i] = Math.random() / chaos
-        }
-        else{
-            east[i] = -Math.random() / chaos
-        }
-    }
+    //     if (Math.random() < 0.5) {
+    //         east[i] = Math.random() / chaos
+    //     }
+    //     else {
+    //         east[i] = -Math.random() / chaos
+    //     }
+    // }
 
-    let posUp = north.length - 1
-    let posDown = south.length - 1
-
-    
-    let horizontal = levelHeight / frequency
-    let min = 20
-    let max = 40
-    let up = max / 2
-    let down = max / 2
-
-    for (let i = 0; i < (levelWidth / width); i++) {
-
-        if(i == 0 || i == (levelWidth / width) - 1){
-            let pos = south.length - 1
-            let counter = max / 2
-            for (let j = 0; j < (levelHeight / width); j++) {
-                if(horizontal == 0 &&  pos > 0){
-                    pos--
-                    horizontal = levelHeight / frequency
-                }
-                else{
-                    horizontal--
-                }
-                
-                
-                if(j == 0 || j == (levelHeight / width) - 1){
-                    entities[`Border${i}_${j}`] = Border(world, {x : (i * width) + width / 2, y : (j * width) + width / 2}, { width: width, height: width}) 
-                }
-                else if(i == (levelHeight / width) - 1){
-                    counter += east[pos]
-                    if(counter < min){
-                        counter = min
-                        pos--
-                    }
-                    else if(counter > max){
-                        counter = max
-                        pos--
-    
-                    }
-                    entities[`Border${i}_${j}`] = Border(world, {x : ((i + 1) * width) - counter / 2, y : (j * width) + width / 2}, { width: counter, height: width}) 
-                }
-                else{
-                    counter += west[pos]
-                    if(counter < min){
-                        counter = min
-                        pos--
-                    }
-                    else if(counter > max){
-                        counter = max
-                        pos--
-    
-                    }
-                    entities[`Border${i}_${j}`] = Border(world, {x : (i * width) + counter / 2, y : (j * width) + width / 2}, { width: counter, height: width}) 
-                }
-                     
-            }
-
-        }
-        else{
-
-            if(horizontal == 0 &&  posUp > 0 && posDown > 0){
-                posUp--
-                posDown--
-                horizontal = levelHeight / frequency
-            }
-            else{
-                horizontal--
-            }
-
-            up += north[posUp]
-            down += south[posDown]
-            if(up < min){
-                up = min
-                posUp--
-            }
-            else if(up > max){
-                up = max
-                posUp--
-
-            }
-
-            if(down < min){
-                down = min
-                posDown--
-
-            }
-            else if(down > max){
-                down = max
-                posDown--
-
-            }
+    // let posUp = north.length - 1
+    // let posDown = south.length - 1
 
 
-            entities[`Border${i}_${0}`] = Border(world, {x : (i * width) + width / 2, y :  up / 2}, { width: width, height: up})
+    // let horizontal = levelHeight / frequency
+    // let min = 20
+    // let max = 40
+    // let up = max / 2
+    // let down = max / 2
 
-            entities[`Border${i}_${19}`] = Border(world, {x : (i * width) + width / 2, y : levelWidth - (down / 2)}, { width: width, height: down})
-        }
-        
-    }
+    // for (let i = 0; i < (levelWidth / width); i++) {
 
-    
+    //     if (i == 0 || i == (levelWidth / width) - 1) {
+    //         let pos = south.length - 1
+    //         let counter = max / 2
+    //         for (let j = 0; j < (levelHeight / width); j++) {
+    //             if (horizontal == 0 && pos > 0) {
+    //                 pos--
+    //                 horizontal = levelHeight / frequency
+    //             }
+    //             else {
+    //                 horizontal--
+    //             }
+
+
+    //             if (j == 0 || j == (levelHeight / width) - 1) {
+    //                 entities[`Border${i}_${j}`] = Border(world, { x: (i * width) + width / 2, y: (j * width) + width / 2 }, { width: width, height: width })
+    //             }
+    //             else if (i == (levelHeight / width) - 1) {
+    //                 counter += east[pos]
+    //                 if (counter < min) {
+    //                     counter = min
+    //                     pos--
+    //                 }
+    //                 else if (counter > max) {
+    //                     counter = max
+    //                     pos--
+
+    //                 }
+    //                 entities[`Border${i}_${j}`] = Border(world, { x: ((i + 1) * width) - counter / 2, y: (j * width) + width / 2 }, { width: counter, height: width })
+    //             }
+    //             else {
+    //                 counter += west[pos]
+    //                 if (counter < min) {
+    //                     counter = min
+    //                     pos--
+    //                 }
+    //                 else if (counter > max) {
+    //                     counter = max
+    //                     pos--
+
+    //                 }
+    //                 entities[`Border${i}_${j}`] = Border(world, { x: (i * width) + counter / 2, y: (j * width) + width / 2 }, { width: counter, height: width })
+    //             }
+    //         }
+    //     } else {
+
+    //         if (horizontal == 0 && posUp > 0 && posDown > 0) {
+    //             posUp--
+    //             posDown--
+    //             horizontal = levelHeight / frequency
+    //         }
+    //         else {
+    //             horizontal--
+    //         }
+
+    //         up += north[posUp]
+    //         down += south[posDown]
+    //         if (up < min) {
+    //             up = min
+    //             posUp--
+    //         }
+    //         else if (up > max) {
+    //             up = max
+    //             posUp--
+    //         }
+
+    //         if (down < min) {
+    //             down = min
+    //             posDown--
+    //         }
+    //         else if (down > max) {
+    //             down = max
+    //             posDown--
+    //         }
+
+
+    //         entities[`Border${i}_${0}`] = Border(world, { x: (i * width) + width / 2, y: up / 2 }, { width: width, height: up })
+    //         entities[`Border${i}_${19}`] = Border(world, { x: (i * width) + width / 2, y: levelWidth - (down / 2) }, { width: width, height: down })
+    //     }
+    // }
 
     return {
         ...entities,
