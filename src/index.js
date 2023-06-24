@@ -1,7 +1,8 @@
 const { QMainWindow, QWidget } = require("@nodegui/nodegui")
 const { reactTo } = require('./ai-control')
-const getAntVisibles = require('./ai-input')
+const evaluateField = require('./game-update')
 const { populateField, setupBackground, clearField } = require('./field-manager')
+const { getPointsForType } = require('./score')
 
 
 const floorTileDim = 120
@@ -32,11 +33,27 @@ for (let episode = 0; episode < 100; episode++) {
     while (!gameOver) {
         try {
             const entities = field.children()
-            for (const entry of Object.entries(getAntVisibles(entities))) {
-                // const ant = entry[0]
-                
-                const fovEntities = entry[1]
-                const dirV = reactTo(fovEntities, worldSize)
+            const { antsFOVs, collisions } = evaluateField(entities)
+
+            console.log(collisions)
+
+            // Check for collisions
+            for (const collision of collisions) {
+                const aPoints = getPointsForType(collision.a.type)
+                const bPoints = getPointsForType(collision.b.type)
+                if (aPoints == 0 && bPoints == 0) {
+                    continue
+                }
+
+                console.log('COLLISION WITH SCORE: A: ' + aPoints + ' B: ' + bPoints)
+
+                score += aPoints + bPoints
+            }
+
+            for (const pair of antsFOVs) {
+                // const ant = pair.ant
+
+                const dirV = reactTo(pair.fov, worldSize)
 
                 // Observe the game state and calculate the reward
                 console.log(dirV)

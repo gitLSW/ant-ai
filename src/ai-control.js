@@ -1,17 +1,6 @@
 const tf = require('@tensorflow/tfjs')
 require('@tensorflow/tfjs-node');
-
-const MAX_POINTS = 20
-function getPointsForType(type) {
-    switch (type) {
-        case 'Resource':
-            return MAX_POINTS;
-        case 'Spider':
-            return -10;
-        default:
-            return 0;
-    }
-}
+const { getPointsForType, MAX_POINTS } = require('./score')
 
 const model = tf.sequential({
     layers: [
@@ -34,7 +23,6 @@ function reactTo(fovEntities, worldSize) {
     // const model = await tf.loadLayersModel('file://path/to/your/model.json')
 
     const inputValues = fovEntities
-        .sort((a, b) => a.distance - b.distance)
         .slice(0, 5) // Always the 5 closest Collsions
         .flatMap(entity => {
             return [
