@@ -1,4 +1,4 @@
-const { QLabel, QPixmap, QWidget } = require("@nodegui/nodegui")
+const { QLabel, QPixmap } = require("@nodegui/nodegui")
 const path = require('path')
 
 var imageCache = {}
@@ -25,6 +25,8 @@ function GameObj(imageName, objName, pos, size, parent) {
     
     label.setPixmap(getImage(imageName, size))
 
+    // label.setInlineStyle(`width:${size.width}px; height:${size.height}px`)
+
     return label
 }
 
@@ -48,17 +50,17 @@ function getObstacleImage() {
 }
 
 function populateField(win, worldSize) {
-    const ressourceSize = { width: 30, height: 30 }
-    const obstacleSize = { width: 35, height: 35 }
-    const spiderSize = { width: 25, height: 25 }
-    const antSize = { width: 15, height: 15 }
+    const ressourceSize = { width: 45, height: 45 }
+    const obstacleSize = { width: 50, height: 50 }
+    const spiderSize = { width: 35, height: 35 }
+    const antSize = { width: 25, height: 25 }
 
     const ant = GameObj('ant', 'Ant_0', { x: worldSize.width / 2, y: worldSize.height / 2 }, antSize, win)
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 50; i++) {
         const randCoordinate = getRandomCoordiante(worldSize)
 
-        let random = getRandom(0, 4)
+        let random = getRandom(0, 7)
         if (0 <= random && random <= 2) {
             const obstacle = new GameObj(getObstacleImage(), `Obstacle_${i}`, randCoordinate, obstacleSize, win)
         }
