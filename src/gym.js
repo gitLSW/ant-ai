@@ -25,7 +25,6 @@ class Gym {
     explorationRate = MAX_EPSILON // Epsylon
 
     scoreStore = new Array();
-    maxPositionStore = new Array();
 
     constructor(model, floorTileDim, win) {
         this.model = model;
@@ -33,7 +32,7 @@ class Gym {
         this.field = new Field(win, floorTileDim)
     }
 
-    async runTrainingEpisode(field, worldSize) {
+    async runTrainingEpisode() {
         // Reset the game and obtain the initial state
         var gameOver = false;
         var score = 0;
