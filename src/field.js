@@ -1,0 +1,210 @@
+const { QLabel, QPixmap, QWidget } = require("@nodegui/nodegui")
+const { getRandom, getRandomCoordiante, getPointsForType, MAX_POINTS } = require('./utils')
+const tf = require('@tensorflow/tfjs-node')
+const path = require('path')
+
+var imageCache = {}
+
+function getImage(imageName, size) {
+    if (imageCache[imageName]) {
+        return imageCache[imageName]
+    }
+
+    var image = new QPixmap()
+    const absPath = path.resolve(`${__dirname}/../assets/${imageName}.png`).toString()
+    image.load(absPath)
+    image = image.scaled(size.width, size.height, 1)
+
+    imageCache[imageName] = image
+
+    return image
+}
+
+function setupBackground(parent, floorTileDim, worldSize) {
+    const xTileNum = (worldSize.width / floorTileDim) + 1
+    const yTileNum = (worldSize.height / floorTileDim) + 1
+
+    for (let i = 0; i < xTileNum; i++) {
+        for (let j = 0; j < yTileNum; j++) {
+            const label = new QLabel(parent)
+            label.setObjectName(`floor_${i}_${j}`)
+            label.setGeometry(i * floorTileDim, j * floorTileDim, floorTileDim, floorTileDim)
+            label.setPixmap(getImage('floor', { width: floorTileDim, height: floorTileDim }))
+        }
+    }
+}
+
+function getObstacleImage() {
+    switch (getRandom(0, 2)) {
+        case 0:
+            return 'stone'
+        case 1:
+            return 'leaf'
+        case 2:
+            return 'twig'
+    }
+}
+
+function createGameObj(imageName, objName, pos, size, parent) {
+    const label = new QLabel(parent)
+    label.setObjectName(objName)
+    label.setGeometry(pos.x, pos.y, size.width, size.height)
+
+    label.setPixmap(getImage(imageName, size))
+
+    // label.setInlineStyle(`width:${size.width}px; height:${size.height}px`)
+
+    return label
+}
+
+function populateField(parent, worldSize, trainingAntID) {
+    var entities = {}
+
+    const ressourceSize = { width: 45, height: 45 }
+    const obstacleSize = { width: 50, height: 50 }
+    const spiderSize = { width: 35, height: 35 }
+    const antSize = { width: 25, height: 25 }
+
+    if (trainingAntID) {
+        entities[trainingAntID] = createGameObj('ant', trainingAntID, { x: worldSize.width / 2, y: worldSize.height / 2 }, antSize, parent)
+    }
+
+    for (let i = 0; i < 50; i++) {
+        const randCoordinate = getRandomCoordiante(worldSize)
+
+        let random = getRandom(0, 7)
+        if (0 <= random && random <= 2) {
+            const id = `Obstacle_${i}`
+            entities[id] = createGameObj(getObstacleImage(), id, randCoordinate, obstacleSize, parent)
+        }
+        else if (random == 3) {
+            const id = `Spider_${i}`
+            entities[id] = createGameObj('spider', id, randCoordinate, spiderSize, parent)
+        }
+        else if (random == 4) {
+            const id = `Ressource_${i}`
+            entities[id] = createGameObj('berries', id, randCoordinate, ressourceSize, parent)
+        } else if (!trainingAntID && random == 5) {
+            const id = `Ant_${i}`
+            entities[id] = createGameObj('ant', id, randCoordinate, antSize, parent)
+        }
+    }
+
+    return entities
+}
+
+// function clearField(parent) {
+//     parent.children().forEach(child => {
+//         const id = child?.objectName()
+//         if (!id.startsWith('floor')) {
+//             child.delete()
+//         }
+//     })
+// }
+
+class Field {
+    // if the calls to Gt still fail, we can make our own copies of all the states
+    // trainingMode: only one Ant on field
+    constructor(win, floorTileDim) {
+        const winSize = win.geometry()
+        this.worldSize = { width: winSize.width(), height: winSize.height() }
+
+        const background = new QWidget(win)
+        background.setGeometry(0, 0, this.worldSize.width, this.worldSize.height)
+
+        setupBackground(background, floorTileDim, this.worldSize)
+
+        this.field = new QWidget(win)
+    }
+
+    moveBy(id, dirV) {
+        const entity = this.entities[id]
+        const entityPos = entity?.pos()
+        entity?.move(entityPos.x + dirV.dx, entityPos.y + dirV.dy)
+
+        return entity?.pos()
+    }
+
+    reset(trainingAntID) {
+        const parent = this.field.parent()
+        this.field.delete()
+        this.field = new QWidget(parent)
+        this.field.setGeometry(0, 0, this.worldSize.width, this.worldSize.height)
+        this.entities = populateField(this.field, this.worldSize, trainingAntID)
+    }
+
+    // updateEntities() {
+    //     this.field.children().forEach(child => {
+    //         const id = child.objectName();
+    //         this.entities[id] = child
+    //     })
+    // }
+
+    getFOV(antID) {
+        const ant = this.entities[antID]
+        const antPos = ant.pos()
+        return Object.entries(this.entities)
+            .flatMap(pair => {
+                const entityID = pair[0]
+                if (entityID === ant.id) {
+                    return null
+                }
+
+                const type = entityID.split('_')[0]
+                const entityPos = pair[1].pos()
+                const dir = { dx: entityPos.x - antPos.x, dy: entityPos.y - antPos.y }
+                const distance = Math.sqrt(Math.pow(dir.dx, 2) + Math.pow(dir.dy, 2))
+                return { id: entityID, type, dir, distance }
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.distance - b.distance)
+    }
+
+    collisionsWith(antID) {
+        const ant = this.entities[antID]
+        const antGeom = ant?.geometry()
+
+        return Object.values(this.entities)
+            .filter(entity => antID !== entity.objectName() && this.isIntersecting(antGeom, entity.geometry()))
+            .map(entity => {
+                const entityID = entity.objectName()
+                const type = entityID.split('_')[0]
+                return { id: entityID, type }
+            })
+    }
+
+    delete(id) {
+        this.entities[id].delete()
+        delete this.entities[id]
+    }
+
+    isIntersecting(aGeom, bGeom) {
+        // Check if rectA and rectB intersect
+        return aGeom.left() + aGeom.width() > bGeom.left() &&
+            bGeom.left() + bGeom.width() > aGeom.left() &&
+            aGeom.top() + aGeom.height() > bGeom.top() &&
+            bGeom.top() + bGeom.height() > aGeom.top()
+    }
+
+    fovToInputTensor(fov) {
+        const inputValues = fov
+            .slice(0, 5) // Always the 5 closest Collsions
+            .flatMap(entity => {
+                return [
+                    // Normalize direction Vectors: vector / worldSize
+                    entity.dir.dx / this.worldSize.width, // xDir
+                    entity.dir.dy / this.worldSize.height, // yDir
+                    getPointsForType(entity.type) / MAX_POINTS // points
+                ]
+            })
+
+        // Preprocess the input data
+        return tf.tensor(inputValues).reshape([-1, 15]); // reshape is needed for some reason
+    }
+
+    hasRessources() {
+        return Object.values(this.entities).includes(e => e.objectName().startsWith('Ressource'))
+    }
+}
+
+module.exports = Field
