@@ -4,17 +4,19 @@ const Field = require('./field')
 const { getPointsForType } = require('./utils');
 
 const MAX_STEPS_PER_EPISODE = 1500; // Define a maximum number of steps per episode to avoid infinite loops
-const LEARNING_RATE = 0.001;
-const DISCOUNT_RATE = 0.99;
+const DISCOUNT_RATE = 0.9;
+
 const MIN_EPSILON = 0.01;
 const MAX_EPSILON = 0.2;
-const LAMBDA = 0.01;
+const LAMBDA = 0.01; //LEARNING RATE
 
 const MEMORY_SIZE = 500
 const BATCH_SIZE = 100
 
 const INPUT_LAYER_SIZE = 15
 const OUTPUT_LAYER_SIZE = 2
+
+// const optimizer = tf.train.adam(LEARNING_RATE);
 
 class Gym {
     memory = new Memory(MEMORY_SIZE)
@@ -24,12 +26,29 @@ class Gym {
     totalSteps = 0
     explorationRate = MAX_EPSILON // Epsylon
 
-    scoreStore = new Array();
-
     constructor(model, floorTileDim, win) {
         this.model = model;
 
         this.field = new Field(win, floorTileDim)
+    }
+
+    computeReward(antID) {
+        // Check for collisions and calculate the reward
+        var actionReward = 0
+        for (const entity of this.field.collisionsWith(antID)) {
+            const points = getPointsForType(entity.type)
+            if (points == 0) {
+                continue
+            }
+
+            console.log('COLLISION WITH SCORE: ' + points, antID, entity.id)
+
+            this.field.delete(entity.id)
+
+            actionReward += points
+        }
+
+        return actionReward
     }
 
     async runTrainingEpisode() {
@@ -42,42 +61,39 @@ class Gym {
         // The id must have at least one _ and must begin with the entity's type
         const trainingAntID = 'Ant_Player'
         this.field.reset(trainingAntID)
-        let inputState = this.field.fovToInputTensor(this.field.getFOV(trainingAntID))
+        let inputState = this.field.getInputTensor(trainingAntID)
 
         // Game loop
         for (let step = 0; step < MAX_STEPS_PER_EPISODE && !gameOver; step++) {
             // Take random actions with explorationRate probability
-            const dirV = this.model.chooseAction(inputState, this.explorationRate)
-            this.field.moveBy(trainingAntID, dirV)
+            const output = this.model.chooseAction(inputState, this.explorationRate)
+            const [dx, dy] = output
+            this.field.moveBy(trainingAntID, { dx, dy })
 
-            const reward = this.computeReward(trainingAntID)
-            score += reward
-            
+            // Observe the game state and calculate the reward
+            const actionReward = this.computeReward(trainingAntID)
+            score += actionReward
+
             // Get next State
-            const nextInputState = this.field.fovToInputTensor(this.field.getFOV(trainingAntID))
+            const nextInputState = this.field.getInputTensor(trainingAntID)
 
             // We log the normalized InputTensor and the normalized Output directly
-            this.memory.record([inputState, dirV, reward, nextInputState]);
+            this.memory.record([inputState, output, actionReward, nextInputState]);
             inputState = nextInputState
 
             // Exponentially decay the exploration parameter
             this.totalSteps++
             this.explorationRate = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
 
-            // // Update the AI's policy
-            // const tensorInput = tf.tensor2d([dirV.dx, dirV.dy], [1, 2]);
-            // const prediction = model.predict(tensorInput);
-            // // const oldPolicy = prediction.clone();
-
             // // Apply the reinforcement learning update rule
-            // const target = actionReward + discountFactor * prediction.max().dataSync()[0];
-            // const loss = tf.losses.meanSquaredError(target, prediction);
+            // const targetActionV = [actionReward + DISCOUNT_RATE * dirV[0], actionReward + DISCOUNT_RATE * dirV[1]];
+            // const chosenActionV = [dirV[0], dirV[1]];
+            // const loss = tf.losses.meanSquaredError(targetActionV, chosenActionV);
             // optimizer.minimize(() => loss);
 
             // // const newPolicy = model.predict(tensorInput);
             // tensorInput.dispose();
             // prediction.dispose();
-            // // newPolicy.dispose();
 
             // All Ressources Empty
             if (!this.field.hasRessources()) {
@@ -85,54 +101,39 @@ class Gym {
             }
         }
 
-        this.scoreStore.push(score);
-
         await this.replay()
-    }
-
-    computeReward(antID) {
-        // Check for collisions and calculate the reward
-        var actionReward = 0
-        for (const entity of this.field.collisionsWith(antID)) {
-            const points = getPointsForType(entity.type)
-            if (points == 0) {
-                continue
-            }
-
-            console.log('COLLISION WITH SCORE: ' + points, ant.id, entity.id)
-
-            this.field.delete(entity.id)
-
-            actionReward += points
-        }
-
-        return actionReward
     }
 
     async replay() {
         // Sample from memory
         const batch = this.memory.sample(BATCH_SIZE);
+
         const states = batch.map(([state, , ,]) => state);
         const nextStates = batch.map(
             ([, , , nextState]) => nextState ? nextState : tf.zeros([INPUT_LAYER_SIZE])
         );
-        // Predict the values of each action at each state
+
+        // Predict the output of each action at each state
         const qsa = states.map((state) => this.model.predict(state));
-        // Predict the values of each action at each next state
+        // Predict the output of each action at each next state
         const qsad = nextStates.map((nextState) => this.model.predict(nextState));
 
         let x = new Array();
         let y = new Array();
 
         // Update the states rewards with the discounted next states rewards
-        batch.forEach(
-            ([state, action, reward, nextState], index) => {
-                const currentQ = qsa[index];
-                currentQ[action] = nextState ? reward + DISCOUNT_RATE * qsad[index].max().dataSync() : reward;
-                x.push(state.dataSync());
-                y.push(currentQ.dataSync());
-            }
-        );
+        batch.forEach(([state, action, reward, nextState], index) => {
+            const currentQ = qsa[index];
+
+            // currentQ and action are both output Vectors, why would I want to hash them ?!
+            // FAULT: ACTION IS NOT DISCRETE AND qsad DOESN'T NEED TO USE max() BECAUSE IT IS AN AI output (= dirV).
+            currentQ[action] = nextState ? reward + DISCOUNT_RATE * qsad[index].max().dataSync() : reward;
+
+            // console.log(currentQ)
+
+            x.push(state.dataSync());
+            y.push(currentQ.dataSync());
+        });
 
         // Clean unused tensors
         qsa.forEach(state => state.dispose());
@@ -143,7 +144,9 @@ class Gym {
         y = tf.tensor2d(y, [y.length, OUTPUT_LAYER_SIZE])
 
         // Learn the Q(s, a) values given associated discounted rewards
-        await this.model.train(x, y);
+        // const history = await this.model.train(x, y);
+
+        // console.log(history)
 
         x.dispose();
         y.dispose();

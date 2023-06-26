@@ -6,27 +6,14 @@ const tf = require('@tensorflow/tfjs-node')
 class AIModel {
     constructor(network) {
         this.network = network
-        this.network.summary();
-        this.network.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
     }
 
-    reactTo(input) {
-        // console.log(input)
-
-        // Make predictions
-        const prediction = tf.tidy(() => this.network.predict(input))
-        
-        const out = prediction.dataSync();
-        input.dispose();
-
-        // // Cleanup
-        // input.dispose();
-        // predictions.dispose();
-        // // model.dispose();
-
-        // // Return the output as an array
-        // const out = Array.from(output);
-        return { dx: out[0], dy: out[1] }
+    /**
+     * @param {tf.Tensor | tf.Tensor[]} states
+     * @returns {tf.Tensor | tf.Tensor} The predictions of the best actions
+     */
+    predict(input) {
+        return tf.tidy(() => this.network.predict(input));
     }
 
     /**
@@ -34,17 +21,56 @@ class AIModel {
      * @param {tf.Tensor[]} yBatch
      */
     async train(xBatch, yBatch) {
-        await this.network.fit(xBatch, yBatch);
+        return await this.network.fit(xBatch, yBatch, {
+            batchSize: 10,
+            epochs: 50
+          });
     }
 
     /**
      * @param {tf.Tensor} input
-     * @returns {number} The action chosen by the model: Directional Vector with dx and dy between -1 - 1
+     * @returns {number[]} The action chosen by the model: Directional Vector with dx and dy between -1 - 1
      */
     chooseAction(input, explorationRate = 0) {
         return (Math.random() < explorationRate) ?
-            { dx: Math.random() * 2 - 1, dy: Math.random() * 2 - 1 } :
-            this.reactTo(input)
+            [Math.random() * 2 - 1, Math.random() * 2 - 1] :
+            this.predict(input).dataSync()
+    }
+
+
+    // WHY DID HE USE TWI DIFFERENT OUTPUTS IN HIS TUTORIAL ?!!
+    /**
+     * @param {tf.Tensor} state
+     * @returns {number} The action chosen by the model (-1 | 0 | 1)
+     */
+    // chooseAction(state, eps) {
+    //     if (Math.random() < eps) {
+    //         return Math.floor(Math.random() * this.numActions) - 1;
+    //     } else {
+    //         return tf.tidy(() => {
+    //             const logits = this.network.predict(state);
+    //             const sigmoid = tf.sigmoid(logits);
+    //             const probs = tf.div(sigmoid, tf.sum(sigmoid));
+    //             return tf.multinomial(probs, 1).dataSync()[0] - 1;
+    //         });
+    //     }
+    // }
+
+    // predict(states) {
+    //     return tf.tidy(() => this.network.predict(states));
+    // }
+
+
+    print() {
+        const layer = this.network.getLayer(undefined, 1);
+        const weights = layer.getWeights()[0];
+        const biases = layer.getWeights()[1];
+
+        // Print the weights and biases
+        console.log('Weights:');
+        weights.print();
+        console.log('Biases:');
+        biases.print();
     }
 }
 
@@ -68,17 +94,23 @@ async function createModel(path) {
             ]
         });
 
+        network.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+
         return new AIModel(network)
     }
 
     const modelsInfo = await tf.io.listModels();
     if (path in modelsInfo) {
         console.log(`Loading AI model from ${modelPath}...`)
-        return new AIModel(await tf.loadLayersModel(path))
+
+        const network = new AIModel(await tf.loadLayersModel(path))
+        network.compile({ optimizer: 'adam', loss: 'meanSquaredError' })
+
+        return network
     } else {
         throw new Error(`Cannot find model at ${path}.`);
     }
 }
 
 
-module.exports = { createModel }
+module.exports = createModel

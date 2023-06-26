@@ -3,6 +3,8 @@ const { getRandom, getRandomCoordiante, getPointsForType, MAX_POINTS } = require
 const tf = require('@tensorflow/tfjs-node')
 const path = require('path')
 
+const MAX_MOVEMENT_SPEED = 7
+
 var imageCache = {}
 
 function getImage(imageName, size) {
@@ -69,22 +71,24 @@ function populateField(parent, worldSize, trainingAntID) {
         entities[trainingAntID] = createGameObj('ant', trainingAntID, { x: worldSize.width / 2, y: worldSize.height / 2 }, antSize, parent)
     }
 
+    var hasRessource = false
     for (let i = 0; i < 50; i++) {
         const randCoordinate = getRandomCoordiante(worldSize)
 
         let random = getRandom(0, 7)
-        if (0 <= random && random <= 2) {
+        if (!hasRessource || random == 0) {
+            hasRessource = true
+            const id = `Ressource_${i}`
+            entities[id] = createGameObj('berries', id, randCoordinate, ressourceSize, parent)
+        } else if (1 <= random && random <= 3) {
             const id = `Obstacle_${i}`
             entities[id] = createGameObj(getObstacleImage(), id, randCoordinate, obstacleSize, parent)
         }
-        else if (random == 3) {
+        else if (random == 4) {
             const id = `Spider_${i}`
             entities[id] = createGameObj('spider', id, randCoordinate, spiderSize, parent)
         }
-        else if (random == 4) {
-            const id = `Ressource_${i}`
-            entities[id] = createGameObj('berries', id, randCoordinate, ressourceSize, parent)
-        } else if (!trainingAntID && random == 5) {
+        else if (!trainingAntID && random == 5) {
             const id = `Ant_${i}`
             entities[id] = createGameObj('ant', id, randCoordinate, antSize, parent)
         }
@@ -120,7 +124,7 @@ class Field {
     moveBy(id, dirV) {
         const entity = this.entities[id]
         const entityPos = entity?.pos()
-        entity?.move(entityPos.x + dirV.dx, entityPos.y + dirV.dy)
+        entity?.move(entityPos.x + dirV.dx * MAX_MOVEMENT_SPEED, entityPos.y + dirV.dy * MAX_MOVEMENT_SPEED)
 
         return entity?.pos()
     }
@@ -186,8 +190,8 @@ class Field {
             bGeom.top() + bGeom.height() > aGeom.top()
     }
 
-    fovToInputTensor(fov) {
-        const inputValues = fov
+    getInputTensor(antID) {
+        const inputValues = this.getFOV(antID)
             .slice(0, 5) // Always the 5 closest Collsions
             .flatMap(entity => {
                 return [
@@ -203,7 +207,9 @@ class Field {
     }
 
     hasRessources() {
-        return Object.values(this.entities).includes(e => e.objectName().startsWith('Ressource'))
+        return new Boolean(Object.values(this.entities).find(e => {
+            e.objectName().startsWith('Ressource')
+        }))
     }
 }
 

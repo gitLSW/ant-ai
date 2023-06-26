@@ -25,9 +25,9 @@ class Gym {
         while (!gameOver) {
             const inputState = this.field.fovToInputTensor(this.field.getFOV(trainingAntID))
 
-            // Take random actions with explorationRate probability
-            const dirV = this.model.chooseAction(inputState, this.explorationRate)
-            this.field.moveBy(trainingAntID, dirV)
+            const output = this.model.predict(inputState)
+            const [dx, dy] = output
+            this.field.moveBy(trainingAntID, { dx, dy })
 
             const reward = this.computeReward(trainingAntID)
             score += reward

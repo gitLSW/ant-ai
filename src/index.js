@@ -1,6 +1,6 @@
 const { QMainWindow } = require("@nodegui/nodegui")
 const Gym = require("./gym")
-const { createModel } = require('./ai-model')
+const createModel = require('./ai-model')
 
 // field.children() CAN BE IGNORED, WE CAN SIMULATE IT IN THE BACKGROUND
 const floorTileDim = 120
@@ -12,14 +12,22 @@ win.setFixedSize(worldSize.width, worldSize.height)
 
 async function start() {
     const aiModel = await createModel()
+
+    // console.log('INITIAL')
+    // aiModel.print();
+
     const gym = new Gym(aiModel, floorTileDim, win)
 
-    // while (true) {
-    gym.runTrainingEpisode()
+    // for (let step = 0; step < 20; step++) {
+        await gym.runTrainingEpisode()
     // }
+
+    // console.log('AFTER')
+    // aiModel.print();
 }
 
 start()
+
 win.show()
 global.win = win
 

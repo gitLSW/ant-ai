@@ -1,3 +1,4 @@
+const { sampleSize } = require('lodash')
 const { getRandom } = require('./utils')
 
 class Memory {
@@ -28,16 +29,24 @@ class Memory {
      * @returns {Array} Randomly selected samples
      */
     sample(nSamples) {
-        var samples = new Array(nSamples)
-        var prevIndices = new Array(nSamples)
-        while (samples.length < nSamples) {
-            const sampleIndex = getRandom(0, this.memories.length)
-            if (prevIndices.includes(sampleIndex)) return
-            prevIndex.push(sampleIndex)
-            samples.push(this.memories[sampleIndex])
-        }
+        return sampleSize(this.memories, nSamples);
+        // var samples = []
+        // var prevIndices = []
+        // nSamples = Math.min([nSamples, this.maxMemory])
+        // while (samples.length < nSamples) {
+        //     const sampleIndex = getRandom(0, this.memories.length)
 
-        return samples
+        //     console.log(prevIndices.includes(sampleIndex))
+
+        //     if (prevIndices.includes(sampleIndex)) { continue }
+
+        //     console.log(prevIndices.includes(sampleIndex))
+
+        //     prevIndices.push(sampleIndex)
+        //     samples.push(this.memories[sampleIndex])
+        // }
+
+        // return samples
     }
 }
 
