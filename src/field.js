@@ -1,7 +1,8 @@
 const { QLabel, QPixmap, QWidget } = require("@nodegui/nodegui")
-const { getRandom, getRandomCoordiante, getPointsForType, MAX_POINTS } = require('./utils')
+const { getRandom, getRandomCoordiante, MAX_POINTS } = require('./utils')
 const tf = require('@tensorflow/tfjs-node')
 const path = require('path')
+const { ACTOR_INPUT_LAYER_SIZE, NUMBER_ENTITIES_IN_FOV } = require('./utils');
 
 const MAX_MOVEMENT_SPEED = 7
 
@@ -59,7 +60,7 @@ function createGameObj(imageName, objName, pos, size, parent) {
     return label
 }
 
-function populateField(parent, worldSize, trainingAntID) {
+function populateField(parent, worldSize, trainingActorID) {
     var entities = {}
 
     const ressourceSize = { width: 45, height: 45 }
@@ -67,8 +68,8 @@ function populateField(parent, worldSize, trainingAntID) {
     const spiderSize = { width: 35, height: 35 }
     const antSize = { width: 25, height: 25 }
 
-    if (trainingAntID) {
-        entities[trainingAntID] = createGameObj('ant', trainingAntID, { x: worldSize.width / 2, y: worldSize.height / 2 }, antSize, parent)
+    if (trainingActorID) {
+        entities[trainingActorID] = createGameObj('ant', trainingActorID, { x: worldSize.width / 2, y: worldSize.height / 2 }, antSize, parent)
     }
 
     var hasRessource = false
@@ -88,7 +89,7 @@ function populateField(parent, worldSize, trainingAntID) {
             const id = `Spider_${i}`
             entities[id] = createGameObj('spider', id, randCoordinate, spiderSize, parent)
         }
-        else if (!trainingAntID && random == 5) {
+        else if (!trainingActorID && random == 5) {
             const id = `Ant_${i}`
             entities[id] = createGameObj('ant', id, randCoordinate, antSize, parent)
         }
@@ -105,6 +106,26 @@ function populateField(parent, worldSize, trainingAntID) {
 //         }
 //     })
 // }
+
+function getTypeInput(entityID, actorID) {
+    const entityType = entityID.split('_')[0]
+
+    // Because ants and Spiders run on the same NN, we have to differentiate between friendlies and enimies
+    const actorType = actorID.split('_')[0]
+
+    switch (entityType) {
+        case 'Obstacle':
+            return 1;
+        case 'Ant':
+            return actorType === entityType ? 2 : 3; // 2=friendly
+        case 'Spider':
+            return actorType === entityType ? 2 : 3; // 3=enemy
+        case 'Resource':
+            return 4;
+        default:
+            return 0;
+    }
+}
 
 class Field {
     // if the calls to Gt still fail, we can make our own copies of all the states
@@ -129,12 +150,12 @@ class Field {
         return entity?.pos()
     }
 
-    reset(trainingAntID) {
+    reset(trainingActorID) {
         const parent = this.field.parent()
         this.field.delete()
         this.field = new QWidget(parent)
         this.field.setGeometry(0, 0, this.worldSize.width, this.worldSize.height)
-        this.entities = populateField(this.field, this.worldSize, trainingAntID)
+        this.entities = populateField(this.field, this.worldSize, trainingActorID)
     }
 
     // updateEntities() {
@@ -144,8 +165,8 @@ class Field {
     //     })
     // }
 
-    getFOV(antID) {
-        const ant = this.entities[antID]
+    getFOV(actorID) {
+        const ant = this.entities[actorID]
         const antPos = ant.pos()
         return Object.entries(this.entities)
             .flatMap(pair => {
@@ -164,12 +185,12 @@ class Field {
             .sort((a, b) => a.distance - b.distance)
     }
 
-    collisionsWith(antID) {
-        const ant = this.entities[antID]
+    collisionsWith(actorID) {
+        const ant = this.entities[actorID]
         const antGeom = ant?.geometry()
 
         return Object.values(this.entities)
-            .filter(entity => antID !== entity.objectName() && this.isIntersecting(antGeom, entity.geometry()))
+            .filter(entity => actorID !== entity.objectName() && this.isIntersecting(antGeom, entity.geometry()))
             .map(entity => {
                 const entityID = entity.objectName()
                 const type = entityID.split('_')[0]
@@ -190,20 +211,19 @@ class Field {
             bGeom.top() + bGeom.height() > aGeom.top()
     }
 
-    getInputTensor(antID) {
-        const inputValues = this.getFOV(antID)
-            .slice(0, 5) // Always the 5 closest Collsions
+    getInputTensor(actorID) {
+        const inputValues = this.getFOV(actorID)
+            .slice(0, NUMBER_ENTITIES_IN_FOV) // Always the 5 closest Collsions
             .flatMap(entity => {
                 return [
-                    // Normalize direction Vectors: vector / worldSize
-                    entity.dir.dx / this.worldSize.width, // xDir
-                    entity.dir.dy / this.worldSize.height, // yDir
-                    getPointsForType(entity.type) / MAX_POINTS // points
+                    entity.dir.dx, // xDir
+                    entity.dir.dy, // yDir
+                    getTypeInput(entity.objectName(), actorID)
                 ]
             })
 
         // Preprocess the input data
-        return tf.tensor(inputValues).reshape([-1, 15]); // reshape is needed for some reason
+        return tf.tensor(inputValues).reshape([null, ACTOR_INPUT_LAYER_SIZE]); // reshape is needed for some reason
     }
 
     hasRessources() {
