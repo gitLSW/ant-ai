@@ -1,10 +1,7 @@
 const { QLabel, QPixmap, QWidget } = require("@nodegui/nodegui")
-const { getRandom, getRandomCoordiante, MAX_POINTS } = require('./utils')
+const { getRandom, getRandomCoordiante, getMovementSpeed, INPUT_LAYER_SIZE, NUMBER_ENTITIES_IN_FOV } = require('./utils')
 const tf = require('@tensorflow/tfjs-node')
 const path = require('path')
-const { ACTOR_INPUT_LAYER_SIZE, NUMBER_ENTITIES_IN_FOV } = require('./utils');
-
-const MAX_MOVEMENT_SPEED = 7
 
 var imageCache = {}
 
@@ -60,6 +57,19 @@ function createGameObj(imageName, objName, pos, size, parent) {
     return label
 }
 
+// Takes in the output of the NN and returns the sum of all the directional vectors * activation for that direction
+// Convert the direction to radians: There are OUTPUT_LAYER_SIZE directions to walk
+// const radians = tf.mul(tf.range(0, OUTPUT_LAYER_SIZE), tf.scalar(2 * Math.PI / OUTPUT_LAYER_SIZE));
+// // Calculate the x and y components of the unit vector and create a matrix: x = cos(radians), y = sin(radians)
+// const unitVectorMatrix = tf.stack([tf.cos(radians), tf.sin(radians)], 1)
+// function getMovement(movementDecision) {
+//     // Multiply the unit vector matrix of each direction with the activation of the directon
+
+//     /// CHECK OUT THIS .sum IT MAY SUM UP THE x + y and create a 1dVector uf useless shit.
+//     // It needs to create a Vector with two components: ( sumX, sumY )
+//     return tf.sum(tf.mul(tf.tensor1d(movementDecision), unitVectorMatrix))
+// }
+
 function populateField(parent, worldSize, trainingActorID) {
     var entities = {}
 
@@ -107,9 +117,7 @@ function populateField(parent, worldSize, trainingActorID) {
 //     })
 // }
 
-function getTypeInput(entityID, actorID) {
-    const entityType = entityID.split('_')[0]
-
+function getTypeInput(entityType, actorID) {
     // Because ants and Spiders run on the same NN, we have to differentiate between friendlies and enimies
     const actorType = actorID.split('_')[0]
 
@@ -142,10 +150,17 @@ class Field {
         this.field = new QWidget(win)
     }
 
-    moveBy(id, dirV) {
+    getPos(entityID) {
+        return this.entities[entityID].pos()
+    }
+
+    move(id, dirV) {
         const entity = this.entities[id]
         const entityPos = entity?.pos()
-        entity?.move(entityPos.x + dirV.dx * MAX_MOVEMENT_SPEED, entityPos.y + dirV.dy * MAX_MOVEMENT_SPEED)
+
+        const type = id.split('_')[0]
+        const movementSpeed = getMovementSpeed(type)
+        entity?.move(entityPos.x + dirV.dx * movementSpeed, entityPos.y + dirV.dy * movementSpeed)
 
         return entity?.pos()
     }
@@ -166,18 +181,18 @@ class Field {
     // }
 
     getFOV(actorID) {
-        const ant = this.entities[actorID]
-        const antPos = ant.pos()
+        const actor = this.entities[actorID]
+        const actorPos = actor.pos()
         return Object.entries(this.entities)
             .flatMap(pair => {
                 const entityID = pair[0]
-                if (entityID === ant.id) {
+                if (entityID === actorID) {
                     return null
                 }
 
                 const type = entityID.split('_')[0]
                 const entityPos = pair[1].pos()
-                const dir = { dx: entityPos.x - antPos.x, dy: entityPos.y - antPos.y }
+                const dir = { dx: entityPos.x - actorPos.x, dy: entityPos.y - actorPos.y }
                 const distance = Math.sqrt(Math.pow(dir.dx, 2) + Math.pow(dir.dy, 2))
                 return { id: entityID, type, dir, distance }
             })
@@ -186,11 +201,11 @@ class Field {
     }
 
     collisionsWith(actorID) {
-        const ant = this.entities[actorID]
-        const antGeom = ant?.geometry()
+        const actor = this.entities[actorID]
+        const actorGeom = actor?.geometry()
 
         return Object.values(this.entities)
-            .filter(entity => actorID !== entity.objectName() && this.isIntersecting(antGeom, entity.geometry()))
+            .filter(entity => actorID !== entity.objectName() && this.isIntersecting(actorGeom, entity.geometry()))
             .map(entity => {
                 const entityID = entity.objectName()
                 const type = entityID.split('_')[0]
@@ -211,25 +226,23 @@ class Field {
             bGeom.top() + bGeom.height() > aGeom.top()
     }
 
-    getInputTensor(actorID) {
-        const inputValues = this.getFOV(actorID)
+    getInputTensor(fov, actorID) {
+        const inputValues = fov
             .slice(0, NUMBER_ENTITIES_IN_FOV) // Always the 5 closest Collsions
             .flatMap(entity => {
                 return [
                     entity.dir.dx, // xDir
                     entity.dir.dy, // yDir
-                    getTypeInput(entity.objectName(), actorID)
+                    getTypeInput(entity.type, actorID)
                 ]
             })
 
         // Preprocess the input data
-        return tf.tensor(inputValues).reshape([null, ACTOR_INPUT_LAYER_SIZE]); // reshape is needed for some reason
+        return tf.tensor(inputValues).reshape([-1, INPUT_LAYER_SIZE]); // reshape is needed for some reason
     }
 
     hasRessources() {
-        return new Boolean(Object.values(this.entities).find(e => {
-            e.objectName().startsWith('Ressource')
-        }))
+        return new Boolean(Object.values(this.entities).find(e => e.objectName().startsWith('Ressource')))
     }
 }
 

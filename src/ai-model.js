@@ -1,12 +1,14 @@
 const tf = require('@tensorflow/tfjs-node')
 // const path = require('path')
-const { ACTOR_INPUT_LAYER_SIZE, ACTOR_OUTPUT_LAYER_SIZE } = require('./utils');
+const { INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
 
 
 // const modelPath = path.resolve(__dirname + '/../ai-models').toString()
 
 const EPSILON = 1
 const EPSILON_DECAY = 0.95
+
+const NUMBER_DIRECTIONS = 16
 
 class AIModel {
     explorationRate = EPSILON
@@ -21,6 +23,16 @@ class AIModel {
      */
     predict(input) {
         return tf.tidy(() => this.network.predict(input));
+    }
+
+    // Converts the output Vector of the NN to a number between [0, 15] using angles
+    approximateDirection(output) {
+        const [dx, dy] = output
+        var angle = Math.atan2(dy, dx)
+        if (angle < 0) {
+            angle += 2 * Math.PI // Convert negative angles to positive (clockwise)
+        }
+        return tf.oneHot(Math.floor(angle / (2 * Math.PI / NUMBER_DIRECTIONS)), NUMBER_DIRECTIONS)
     }
 
     /**
@@ -47,29 +59,10 @@ class AIModel {
             this.predict(input).dataSync()
     }
 
-
-    // WHY DID HE USE TWI DIFFERENT OUTPUTS IN HIS TUTORIAL ?!!
-    /**
-     * @param {tf.Tensor} state
-     * @returns {number} The action chosen by the model (-1 | 0 | 1)
-     */
-    // chooseAction(state, eps) {
-    //     if (Math.random() < eps) {
-    //         return Math.floor(Math.random() * this.numActions) - 1;
-    //     } else {
-    //         return tf.tidy(() => {
-    //             const logits = this.network.predict(state);
-    //             const sigmoid = tf.sigmoid(logits);
-    //             const probs = tf.div(sigmoid, tf.sum(sigmoid));
-    //             return tf.multinomial(probs, 1).dataSync()[0] - 1;
-    //         });
-    //     }
+    // Generate vector of random numbers between 0 and 1
+    // generateRandomOutput() {
+    //     return tf.randomUniform([OUTPUT_LAYER_SIZE], 0, 1).arraySync()
     // }
-
-    // predict(states) {
-    //     return tf.tidy(() => this.network.predict(states));
-    // }
-
 
     print() {
         const layer = this.network.getLayer(undefined, 1);
@@ -103,7 +96,7 @@ async function createActorModel(path) {
         const network = tf.sequential({
             layers: [
                 // Input Layer
-                tf.layers.inputLayer({ inputShape: [ACTOR_INPUT_LAYER_SIZE], activation: 'linear' }),
+                tf.layers.inputLayer({ inputShape: [INPUT_LAYER_SIZE], activation: 'linear' }),
 
                 // Hidden Layers
                 tf.layers.dense({ units: 30, activation: 'relu' }),
@@ -111,9 +104,9 @@ async function createActorModel(path) {
                 tf.layers.dense({ units: 25, activation: 'sigmoid' }),
                 tf.layers.dense({ units: 15, activation: 'relu' }),
 
-                // Output Layer is a vector with dx and dy between -1 and 1,
+                // Output Layer is one of 16 directions and the speed at which the actor would like to move there (between 0 and 1)
                 // denoting how fast in which direction relative to max speed the AI wants to walk
-                tf.layers.dense({ units: ACTOR_OUTPUT_LAYER_SIZE, activation: 'tanh' })
+                tf.layers.dense({ units: OUTPUT_LAYER_SIZE, activation: 'sigmoid' })
             ]
         });
 
@@ -125,27 +118,4 @@ async function createActorModel(path) {
     return await loadModel(path)
 }
 
-async function createCriticModel(path) {
-    if (!path) {
-        const stateInput = tf.layers.inputLayer({ inputShape: [ACTOR_INPUT_LAYER_SIZE], activation: 'linear' })
-        const stateH1 = tf.layers.dense({ units: 20 }).apply(stateInput)
-        const stateH2 = tf.layers.dense({ units: 15, activation: 'relu' }).apply(stateH1)
-
-        const actorActionInput = tf.layers.inputLayer({ inputShape: [ACTOR_OUTPUT_LAYER_SIZE], activation: 'linear' })
-        // const actorActionH1 = tf.layers.dense({ units: 5 }).apply(actorActionInput)
-
-        const merged = tf.layers.concatenate().apply([stateH2, actorActionInput])
-        const mergedH1 = tf.layers.dense({ units: 12, activation: 'relu' }).apply(merged)
-        const output = tf.layers.dense({ units: 1, activation: 'relu' }).apply(mergedH1)
-
-        const network = tf.model({ inputs: input, outputs: output })
-
-        network.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
-
-        return new AIModel(network)
-    }
-
-    return await loadGraphModel(path)
-}
-
-module.exports = { createActorModel, createCriticModel }
+module.exports = { createActorModel }
