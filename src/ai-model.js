@@ -121,32 +121,37 @@ async function createActorModel(path) {
 
 async function createCriticModel(path) {
     if (!path) {
+        const stateInput = tf.layers.inputLayer({ inputShape: [INPUT_LAYER_SIZE], units: INPUT_LAYER_SIZE, activation: 'linear' })
         const stateNetwork = tf.sequential({
             layers: [
                 // Input Layer
-                tf.layers.inputLayer({ inputShape: [INPUT_LAYER_SIZE], activation: 'linear' }),
+                stateInput,
                 tf.layers.dense({ units: 20 }),
                 tf.layers.dense({ units: 15, activation: 'relu' })
             ]
         });
 
+        const actionInput = tf.layers.inputLayer({ inputShape: [OUTPUT_LAYER_SIZE], units: OUTPUT_LAYER_SIZE, activation: 'linear' })
         const actionNetwork = tf.sequential({
             layers: [
                 // Input Layer
-                tf.layers.inputLayer({ inputShape: [OUTPUT_LAYER_SIZE], activation: 'linear' }),
+                actionInput,
                 tf.layers.dense({ units: 5 })
             ]
         });
 
         const merged = tf.layers.concatenate([stateNetwork, actionNetwork])
-        merged.add()
-        const network = tf.sequential({
-            layers: [
-                tf.layers.concatenate([stateNetwork, actionNetwork]),
-                tf.layers.dense({ units: 12, activation: 'relu' }),
-                tf.layers.dense({ units: 1, activation: 'relu' })
-            ]
-        })
+        const mergedH1 = tf.layers.dense({ units: 12, activation: 'relu' })
+        const output = tf.layers.dense({ units: 1, activation: 'relu' })
+        // const network = tf.sequential({
+        //     layers: [
+        //         tf.layers.concatenate([stateNetwork, actionNetwork]),
+        //         tf.layers.dense({ units: 12, activation: 'relu' }),
+        //         tf.layers.dense({ units: 1, activation: 'relu' })
+        //     ]
+        // })
+
+        const network = tf.model({ inputs: [stateInput, actionInput], outputs: output })
 
         // const sgd = tf.train.sgd(LEARNING_RATE)
         network.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });

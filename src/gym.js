@@ -119,7 +119,7 @@ class Gym {
         state.dispose();
         action.dispose();
 
-        const history = await this.actor.train(predReward, actualReward);
+        const history = await this.critic.train(predReward, actualReward);
         console.log(history)
 
         // const loss = (pred, label) => pred.sub(label).square().mean()
