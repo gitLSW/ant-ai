@@ -42,8 +42,9 @@ class AIModel {
      */
     async train(xBatch, yBatch) {
         return await this.network.fit(xBatch, yBatch, {
-            batchSize: 10,
-            epochs: 50
+            // epochs: 5,
+            // batchSize: 32,
+            callbacks: { onBatchEnd: (batch, logs) => console.log(logs) }
         });
     }
 
@@ -121,11 +122,11 @@ async function createActorModel(path) {
 
 async function createCriticModel(path) {
     if (!path) {
-        const stateInput = tf.input({ shape: [INPUT_LAYER_SIZE] });
+        const stateInput = tf.input({ shape: [INPUT_LAYER_SIZE], name: 'state' });
         const stateH1 = tf.layers.dense({ units: 20, activation: 'relu' }).apply(stateInput);
         const stateH2 = tf.layers.dense({ units: 20, activation: 'relu' }).apply(stateH1);
-        
-        const actionInput = tf.input({ shape: [OUTPUT_LAYER_SIZE] });
+
+        const actionInput = tf.input({ shape: [OUTPUT_LAYER_SIZE], name: 'action' });
         const actionH1 = tf.layers.dense({ units: 5, activation: 'relu' }).apply(actionInput);
 
         const concatenated = tf.layers.concatenate().apply([stateH2, actionH1]);
@@ -134,7 +135,6 @@ async function createCriticModel(path) {
 
         // Create the model
         const network = tf.model({ inputs: [stateInput, actionInput], outputs: output });
-
 
         // const sgd = tf.train.sgd(LEARNING_RATE)
         network.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });

@@ -10,7 +10,9 @@ const DISCOUNT_RATE = 0.95
 const MEMORY_SIZE = 1500
 const BATCH_SIZE = 200
 
+// const LEARNING_RATE = 0.05
 // const optimizer = tf.train.adam(LEARNING_RATE);
+// const criticOptimizer = tf.train.sgd(LEARNING_RATE)
 
 class Gym {
     field
@@ -102,27 +104,28 @@ class Gym {
                 gameOver = true
             }
         }
-
-        await this.replay()
     }
 
     async trainCritic() {
         const batch = this.memory.sample(BATCH_SIZE)
 
-        const state = batch.map(([state, action, reward, nextState]) => state);
-        const action = batch.map(([state, action, reward, nextState]) => action);
-        const actualReward = batch.map(([state, action, reward, nextState]) => reward);
+        var states = batch.map(([state, action, reward, nextState]) => state.dataSync())
+        var actions = batch.map(([state, action, reward, nextState]) => action)
+        var actualRewards = batch.map(([state, action, reward, nextState]) => reward ?? 0)
 
-        // Estimated qValue
-        const predReward = await this.critic.predict([state, action]).dataSync()[0];
-
-        state.dispose();
-        action.dispose();
-
-        const history = await this.critic.train(predReward, actualReward);
+        states = tf.tensor2d(states, [states.length, INPUT_LAYER_SIZE])
+        actions = tf.tensor2d(actions, [actions.length, OUTPUT_LAYER_SIZE])
+        actualRewards = tf.tensor2d(actualRewards, [actualRewards.length, 1])
+        
+        const history = await this.critic.train([states, actions], actualRewards)
         console.log(history)
 
-        // const loss = (pred, label) => pred.sub(label).square().mean()
+        console.log('I AM A GENIUS')
+
+        // input.forEach(([state, action]) => {
+        //     state.dispose()
+        //     action.dispose()
+        // });
     }
 
     async replay() {
