@@ -122,10 +122,27 @@ class Gym {
 
         console.log('I AM A GENIUS')
 
+        // Clean Up
+        states.dispose()
+        actions.dispose()
+        actualRewards.dispose()
+
         // input.forEach(([state, action]) => {
         //     state.dispose()
         //     action.dispose()
         // });
+    }
+
+    async trainActor() {
+        const batch = this.memory.sample(BATCH_SIZE)
+
+        const grads = tf.grads((state, action) => {
+            const action = this.actor.predict(state)
+            const predReward = this.critic.predict([state, action])
+
+            return predReward
+        })(...this.actor.weights)
+        
     }
 
     async replay() {
