@@ -66,6 +66,10 @@ class AIModel {
     //     return tf.randomUniform([OUTPUT_LAYER_SIZE], 0, 1).arraySync()
     // }
 
+    getWeights() {
+        return this.network.getWeights();
+    }
+
     print() {
         const layer = this.network.getLayer(undefined, 1);
         const weights = layer.getWeights()[0];

@@ -116,7 +116,7 @@ class Gym {
         states = tf.tensor2d(states, [states.length, INPUT_LAYER_SIZE])
         actions = tf.tensor2d(actions, [actions.length, OUTPUT_LAYER_SIZE])
         actualRewards = tf.tensor2d(actualRewards, [actualRewards.length, 1])
-        
+
         const history = await this.critic.train([states, actions], actualRewards)
         console.log(history)
 
@@ -134,15 +134,19 @@ class Gym {
     }
 
     async trainActor() {
+        function loss(predReward, actualReward) {
+            return tf.losses.meanSquaredError(actualReward, predReward)
+        }
+
+        const lossDerivative = tf.grads(loss)
+
         const batch = this.memory.sample(BATCH_SIZE)
+        const predReward = batch.map(([state, action, reward, nextState]) => this.critic.predict([state, this.actor.predict(state)]))
+        const reward = batch.map(([state, action, reward, nextState]) => reward)
+        const grad = lossDerivative([predReward, reward]);
+        grad.print()
 
-        const grads = tf.grads((state, action) => {
-            const action = this.actor.predict(state)
-            const predReward = this.critic.predict([state, action])
-
-            return predReward
-        })(...this.actor.weights)
-        
+        console.log('PRAISE THE LORD !!!')
     }
 
     async replay() {

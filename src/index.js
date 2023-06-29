@@ -1,3 +1,21 @@
+// const tf=require("@tensorflow/tfjs")
+// const f = (a, b) => tf.pow(a, b).mul(b);
+  
+// // Grad function is used
+// const g = tf.grads(f);
+  
+// // Tensor is declared
+// const a = tf.tensor1d([5, 6, 3]);
+// const b = tf.tensor1d([2, 4, 1]);
+  
+// // Variables are defined
+// const [d1, d2] = g([a, b]);
+  
+// // Variable is printed
+// d1.print();
+// d2.print();
+
+Error.stackTraceLimit = Infinity;
 const { QMainWindow } = require("@nodegui/nodegui")
 const Gym = require("./gym")
 const { createActorModel, createCriticModel } = require('./ai-model')
@@ -29,6 +47,8 @@ async function start() {
     await gym.trainCritic()
     // console.log('AFTER')
     // aiModel.print();
+
+    await gym.trainActor()
 }
 
 start()
