@@ -9,6 +9,7 @@ const EPSILON = 1
 const EPSILON_DECAY = 0.95
 
 const NUMBER_DIRECTIONS = 16
+const LEARNING_RATE = 0.05
 
 class AIModel {
     explorationRate = EPSILON
@@ -26,14 +27,14 @@ class AIModel {
     }
 
     // Converts the output Vector of the NN to a number between [0, 15] using angles
-    approximateDirection(output) {
-        const [dx, dy] = output
-        var angle = Math.atan2(dy, dx)
-        if (angle < 0) {
-            angle += 2 * Math.PI // Convert negative angles to positive (clockwise)
-        }
-        return tf.oneHot(Math.floor(angle / (2 * Math.PI / NUMBER_DIRECTIONS)), NUMBER_DIRECTIONS)
-    }
+    // approximateDirection(output) {
+    //     const [dx, dy] = output
+    //     var angle = Math.atan2(dy, dx)
+    //     if (angle < 0) {
+    //         angle += 2 * Math.PI // Convert negative angles to positive (clockwise)
+    //     }
+    //     return tf.oneHot(Math.floor(angle / (2 * Math.PI / NUMBER_DIRECTIONS)), NUMBER_DIRECTIONS)
+    // }
 
     /**
      * @param {tf.Tensor[]} xBatch
@@ -118,4 +119,42 @@ async function createActorModel(path) {
     return await loadModel(path)
 }
 
-module.exports = { createActorModel }
+async function createCriticModel(path) {
+    if (!path) {
+        const stateNetwork = tf.sequential({
+            layers: [
+                // Input Layer
+                tf.layers.inputLayer({ inputShape: [INPUT_LAYER_SIZE], activation: 'linear' }),
+                tf.layers.dense({ units: 20 }),
+                tf.layers.dense({ units: 15, activation: 'relu' })
+            ]
+        });
+
+        const actionNetwork = tf.sequential({
+            layers: [
+                // Input Layer
+                tf.layers.inputLayer({ inputShape: [OUTPUT_LAYER_SIZE], activation: 'linear' }),
+                tf.layers.dense({ units: 5 })
+            ]
+        });
+
+        const merged = tf.layers.concatenate([stateNetwork, actionNetwork])
+        merged.add()
+        const network = tf.sequential({
+            layers: [
+                tf.layers.concatenate([stateNetwork, actionNetwork]),
+                tf.layers.dense({ units: 12, activation: 'relu' }),
+                tf.layers.dense({ units: 1, activation: 'relu' })
+            ]
+        })
+
+        // const sgd = tf.train.sgd(LEARNING_RATE)
+        network.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+
+        return new AIModel(network)
+    }
+
+    return await loadGraphModel(path)
+}
+
+module.exports = { createActorModel, createCriticModel }

@@ -16,8 +16,9 @@ class Gym {
     field
     memory = new Memory(MEMORY_SIZE)
 
-    constructor(actor, floorTileDim, win) {
+    constructor(actor, critic, floorTileDim, win) {
         this.actor = actor
+        this.critic = critic
         this.targetactor = actor // The actual actor to train
         this.field = new Field(win, floorTileDim)
     }
@@ -80,10 +81,10 @@ class Gym {
             const newFov = this.field.getFOV(trainingActorID)
             const nextInputState = this.field.getInputTensor(newFov, trainingActorID)
 
-            // We log the normalized InputTensor and the normalized Output directly
+            // We log the InputTensor and the Output directly
             // const bestFutureReward = this.bestFutureReward(newFov, trainingActorID)
-            const approximatedDirection = this.actor.approximateDirection([dx, dy]).dataSync()
-            this.memory.record([inputState, approximatedDirection, reward, nextInputState])
+            // const approximatedDirection = this.actor.approximateDirection([dx, dy]).dataSync()
+            this.memory.record([inputState, [dx, dy], reward, nextInputState])
             inputState = nextInputState
 
             // // Apply the reinforcement learning update rule
@@ -103,6 +104,25 @@ class Gym {
         }
 
         await this.replay()
+    }
+
+    async trainCritic() {
+        const batch = this.memory.sample(BATCH_SIZE)
+
+        const state = batch.map(([state, action, reward, nextState]) => state);
+        const action = batch.map(([state, action, reward, nextState]) => action);
+        const actualReward = batch.map(([state, action, reward, nextState]) => reward);
+
+        // Estimated qValue
+        const predReward = await this.critic.predict([state, action]).dataSync()[0];
+
+        state.dispose();
+        action.dispose();
+
+        const history = await this.actor.train(predReward, actualReward);
+        console.log(history)
+
+        // const loss = (pred, label) => pred.sub(label).square().mean()
     }
 
     async replay() {
@@ -127,16 +147,15 @@ class Gym {
 
         // Update the states rewards with the discounted next states rewards
         batch.forEach(([state, action, reward, nextState], index) => {
-            const currentQ = qsa[index];
+            const currentQ = qsa[index]
 
-            // currentQ and action are both output Vectors, why would I want to hash them ?!
-            // FAULT: ACTION IS NOT DISCRETE AND qsad DOESN'T NEED TO USE max() BECAUSE IT IS AN AI output (= dirV).
-            currentQ[action] = nextState ? reward + DISCOUNT_RATE * qsad[index].max().dataSync() : reward;
+            // ERROR: This does not work: 
+            currentQ[action] = nextState ? reward + DISCOUNT_RATE * qsad[index].max().dataSync() : reward
 
             currentQ.print()
 
-            x.push(state.dataSync());
-            y.push(currentQ.dataSync());
+            x.push(state.dataSync())
+            y.push(currentQ.dataSync())
         });
 
         // Clean unused tensors

@@ -1,6 +1,6 @@
 const { QMainWindow } = require("@nodegui/nodegui")
 const Gym = require("./gym")
-const { createActorModel } = require('./ai-model')
+const { createActorModel, createCriticModel } = require('./ai-model')
 
 // field.children() CAN BE IGNORED, WE CAN SIMULATE IT IN THE BACKGROUND
 const floorTileDim = 120
@@ -12,11 +12,12 @@ win.setFixedSize(worldSize.width, worldSize.height)
 
 async function start() {
     const actor = await createActorModel()
+    const critic = await createCriticModel()
 
     // console.log('INITIAL')
     // aiModel.print();
 
-    const gym = new Gym(actor, floorTileDim, win)
+    const gym = new Gym(actor, critic, floorTileDim, win)
 
     win.show()
     global.win = win
@@ -25,6 +26,7 @@ async function start() {
     await gym.collectSamples()
     // }
 
+    await gym.trainCritic()
     // console.log('AFTER')
     // aiModel.print();
 }
