@@ -1,3 +1,5 @@
+const path = require('path')
+const MODEL_PATH = path.resolve(__dirname + '/../ai-models/').toString()
 
 function getRandom(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min)
@@ -41,11 +43,12 @@ function getPoints(entityType, actorID) {
 }
 
 module.exports = { 
+    MODEL_PATH,
+    NUMBER_ENTITIES_IN_FOV,
+    INPUT_LAYER_SIZE,
+    OUTPUT_LAYER_SIZE,
     getRandom,
     getRandomCoordiante,
     getMovementSpeed,
-    getPoints,
-    NUMBER_ENTITIES_IN_FOV,
-    INPUT_LAYER_SIZE,
-    OUTPUT_LAYER_SIZE
+    getPoints
 }

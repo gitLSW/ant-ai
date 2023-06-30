@@ -1,16 +1,16 @@
-// const tf=require("@tensorflow/tfjs")
+// const tf=require("@tensorflow/tfjs-node")
 // const f = (a, b) => tf.pow(a, b).mul(b);
-  
+
 // // Grad function is used
 // const g = tf.grads(f);
-  
+
 // // Tensor is declared
 // const a = tf.tensor1d([5, 6, 3]);
 // const b = tf.tensor1d([2, 4, 1]);
-  
+
 // // Variables are defined
 // const [d1, d2] = g([a, b]);
-  
+
 // // Variable is printed
 // d1.print();
 // d2.print();
@@ -32,26 +32,16 @@ async function start() {
     const actor = await createActorModel()
     const critic = await createCriticModel()
 
-    // console.log('INITIAL')
-    // aiModel.print();
-
     const gym = new Gym(actor, critic, floorTileDim, win)
 
     win.show()
     global.win = win
 
-    // for (let step = 0; step < 20; step++) {
-    await gym.collectSamples()
-    // }
-
-    await gym.trainCritic()
-    // console.log('AFTER')
-    // aiModel.print();
-
-    await gym.trainActor()
+    // Play 20 games
+    for (let step = 0; step < 20; step++) {
+        await gym.collectSamples()
+        await gym.train()
+    }
 }
 
 start()
-
-// Because we do not have a RNN, it is not stateful, meaning the AI will not be affected by previous events
-// Therefore we can play the game with multiple ants on the same AI model

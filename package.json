@@ -11,6 +11,9 @@
   },
   "author": "",
   "license": "ISC",
+  "peerDependencies": {
+    "@tensorflow/tfjs": "^4.8.0"
+  },
   "dependencies": {
     "@nodegui/nodegui": "^0.61.0",
     "@tensorflow/tfjs-node": "^4.8.0",

@@ -1,9 +1,6 @@
 const tf = require('@tensorflow/tfjs-node')
-// const path = require('path')
-const { INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
-
-
-// const modelPath = path.resolve(__dirname + '/../ai-models').toString()
+const { MODEL_PATH, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils')
+const { readdir } = require('fs/promises')
 
 const EPSILON = 1
 const EPSILON_DECAY = 0.95
@@ -23,7 +20,7 @@ class AIModel {
      * @returns {tf.Tensor | tf.Tensor} The predictions of the best actions
      */
     predict(input) {
-        return tf.tidy(() => this.network.predict(input));
+        return tf.tidy(() => this.network.predict(input))
     }
 
     // Converts the output Vector of the NN to a number between [0, 15] using angles
@@ -66,8 +63,12 @@ class AIModel {
     //     return tf.randomUniform([OUTPUT_LAYER_SIZE], 0, 1).arraySync()
     // }
 
-    getWeights() {
-        return this.network.getWeights();
+    getWeights(trainable = false) {
+        return this.network.getWeights(trainable);
+    }
+
+    getOptimizer() {
+        return this.network.optimizer
     }
 
     print() {
@@ -81,24 +82,54 @@ class AIModel {
         console.log('Biases:');
         biases.print();
     }
-}
 
-async function loadModel(path) {
-    const modelsInfo = await tf.io.listModels();
-    if (path in modelsInfo) {
-        console.log(`Loading AI model from ${modelPath}...`)
-
-        const network = new AIModel(await tf.loadLayersModel(path))
-        network.compile({ optimizer: 'adam', loss: 'meanSquaredError' })
-
-        return network
-    } else {
-        throw new Error(`Cannot find model at ${path}.`);
+    async save(modelName) {
+        // try {
+        const res = await this.network.save(`file://${MODEL_PATH}/${modelName}`)
+        console.log(res)
+        return res
+        // } catch {
+        //     console.log('FAILED TO SAVE')
+        // }
     }
 }
 
-async function createActorModel(path) {
-    if (!path) {
+
+async function loadModel(modelName, optimizer) {
+    console.log(`Loading AI model ${modelName} from ${MODEL_PATH}...`)
+    const network = await tf.loadLayersModel(`file://${MODEL_PATH}/${modelName}/model.json`)
+
+    console.log(modelName)
+    network.summary()
+
+    network.compile({ optimizer, loss: 'meanSquaredError' })
+
+    return new AIModel(network)
+}
+
+async function findNewestModel(modelType) {
+    const regex = new RegExp(`^${modelType}_\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z$`)
+    const directories = (await readdir(MODEL_PATH, { withFileTypes: true }))
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name)
+        .filter(name => regex.test(name))
+        .sort((a, b) => b.localeCompare(a)); // Sort directories in descending order
+
+    if (0 < directories.length) {
+        return directories[0]; // Return only the latest version
+    } else {
+        return null; // No matching subdirectories found
+    }
+}
+
+async function createActorModel() {
+    try {
+        const newestModelName = await findNewestModel('actor')
+        return await loadModel(newestModelName, 'adam')
+    } catch (e) {
+        console.log(e)
+
+        console.log(`Failed to load AI model, generating a new Actor Model instead...`)
         const network = tf.sequential({
             layers: [
                 // Input Layer
@@ -120,12 +151,16 @@ async function createActorModel(path) {
 
         return new AIModel(network)
     }
-
-    return await loadModel(path)
 }
 
-async function createCriticModel(path) {
-    if (!path) {
+async function createCriticModel() {
+    try {
+        const newestModelName = await findNewestModel('critic')
+        return await loadModel(newestModelName, 'sgd')
+    } catch (e) {
+        console.log(e)
+
+        console.log(`Failed to load AI model, generating a new Critic Model instead...`)
         const stateInput = tf.input({ shape: [INPUT_LAYER_SIZE], name: 'state' });
         const stateH1 = tf.layers.dense({ units: 20, activation: 'relu' }).apply(stateInput);
         const stateH2 = tf.layers.dense({ units: 20, activation: 'relu' }).apply(stateH1);
@@ -145,8 +180,6 @@ async function createCriticModel(path) {
 
         return new AIModel(network)
     }
-
-    return await loadGraphModel(path)
 }
 
 module.exports = { createActorModel, createCriticModel }
