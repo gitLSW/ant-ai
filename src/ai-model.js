@@ -84,13 +84,11 @@ class AIModel {
     }
 
     async save(modelName) {
-        // try {
-        const res = await this.network.save(`file://${MODEL_PATH}/${modelName}`)
-        console.log(res)
-        return res
-        // } catch {
-        //     console.log('FAILED TO SAVE')
-        // }
+        try {
+            await this.network.save(`file://${MODEL_PATH}/${modelName}`)
+        } catch {
+            console.log('FAILED TO SAVE')
+        }
     }
 }
 

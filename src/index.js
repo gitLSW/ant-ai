@@ -1,20 +1,3 @@
-// const tf=require("@tensorflow/tfjs-node")
-// const f = (a, b) => tf.pow(a, b).mul(b);
-
-// // Grad function is used
-// const g = tf.grads(f);
-
-// // Tensor is declared
-// const a = tf.tensor1d([5, 6, 3]);
-// const b = tf.tensor1d([2, 4, 1]);
-
-// // Variables are defined
-// const [d1, d2] = g([a, b]);
-
-// // Variable is printed
-// d1.print();
-// d2.print();
-
 Error.stackTraceLimit = Infinity;
 const { QMainWindow } = require("@nodegui/nodegui")
 const Gym = require("./gym")
@@ -38,10 +21,23 @@ async function start() {
     global.win = win
 
     // Play 20 games
-    for (let step = 0; step < 20; step++) {
+    for (let epoch = 0; epoch < 20; epoch++) {
         await gym.collectSamples()
         await gym.train()
+
+        if (epoch % 5 == 0) {
+            const now = new Date().toISOString()
+            actor.save('actor_' + now)
+            critic.save('critic_' + now)
+        }
     }
 }
 
 start()
+
+
+
+// CLEAN UP UNDISPOSED TENSORS:
+// The way to clean any unused tensors in async code is to wrap the code that creates them between a startScope() and an endScope() call.
+// tf.engine().startScope()
+// tf.engine().endScope()

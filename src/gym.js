@@ -85,15 +85,13 @@ class Gym {
         await trainCritic(this.actor, this.critic, batch)
         batch = this.memory.sample(BATCH_SIZE)
         await trainActor(this.actor, this.critic, batch)
-
-        const now = new Date().toISOString()
-        this.actor.save('actor_' + now)
-        this.critic.save('critic_' + now)
     }
 }
 
-
+// WHY IS THE LOSS OF CRITIC A NaN SOMETIMES ?
 async function trainCritic(targetActor, critic, batch) {
+    tf.engine().startScope()
+    
     var states = batch.map(([state, action, reward, nextState]) => state)
     var actions = batch.map(([state, action, reward, nextState]) => action)
     var actualRewards = batch.map(([state, action, reward, nextState]) => {
@@ -113,6 +111,8 @@ async function trainCritic(targetActor, critic, batch) {
 
     const history = await critic.train([states, actions], actualRewards)
     console.log(history)
+    
+    tf.engine().endScope()
 
     // Clean Up
     states.dispose()
