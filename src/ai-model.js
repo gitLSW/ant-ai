@@ -50,12 +50,14 @@ class AIModel {
      * @returns {number[]} The action chosen by the model: Directional Vector with dx and dy between -1 - 1
      */
     chooseAction(input) {
-        // Exponentially decay the exploration parameter
-        this.explorationRate *= EPSILON_DECAY
+        return tf.tidy(() => {
+            // Exponentially decay the exploration parameter
+            this.explorationRate *= EPSILON_DECAY
 
-        return (Math.random() < this.explorationRate) ?
-            [Math.random() * 2 - 1, Math.random() * 2 - 1] :
-            this.predict(input).dataSync()
+            return (Math.random() < this.explorationRate) ?
+                [Math.random() * 2 - 1, Math.random() * 2 - 1] :
+                tf.tidy(() => this.predict(input).dataSync());
+        })
     }
 
     // Generate vector of random numbers between 0 and 1
@@ -69,18 +71,6 @@ class AIModel {
 
     getOptimizer() {
         return this.network.optimizer
-    }
-
-    print() {
-        const layer = this.network.getLayer(undefined, 1);
-        const weights = layer.getWeights()[0];
-        const biases = layer.getWeights()[1];
-
-        // Print the weights and biases
-        console.log('Weights:');
-        weights.print();
-        console.log('Biases:');
-        biases.print();
     }
 
     async save(modelName) {

@@ -79,7 +79,7 @@ function populateField(parent, worldSize, trainingActorID) {
     const antSize = { width: 25, height: 25 }
 
     if (trainingActorID) {
-        entities[trainingActorID] = createGameObj('ant', trainingActorID, { x: worldSize.width / 2, y: worldSize.height / 2 }, antSize, parent)
+        entities[trainingActorID] = createGameObj('ant', trainingActorID, getRandomCoordiante(worldSize), antSize, parent)
     }
 
     var hasRessource = false
@@ -238,7 +238,7 @@ class Field {
             })
 
         // Preprocess the input data
-        return tf.tensor(inputValues).reshape([-1, INPUT_LAYER_SIZE]); // reshape is needed for some reason
+        return tf.tidy(() => tf.tensor(inputValues).reshape([-1, INPUT_LAYER_SIZE])) // reshape is needed for some reason
     }
 
     hasRessources() {

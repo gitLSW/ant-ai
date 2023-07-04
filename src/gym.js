@@ -77,6 +77,8 @@ class Gym {
             if (!this.field.hasRessources()) {
                 gameOver = true
             }
+
+            nextInputState.dispose()
         }
     }
 
@@ -98,6 +100,7 @@ async function trainCritic(targetActor, critic, batch) {
         // We want the critic to find the qValue = reward + discount * future_reward
         if (nextState && 0.01 < DISCOUNT_RATE) {
             const targetAction = targetActor.predict(state)
+            // DDPG is harder to train than A2C !!! => SWITCH TO A2C
             return reward + DISCOUNT_RATE * critic.predict([nextState, targetAction]).arraySync()[0][0]
         }
 
@@ -109,8 +112,8 @@ async function trainCritic(targetActor, critic, batch) {
     actions = tf.tensor2d(actions, [actions.length, OUTPUT_LAYER_SIZE])
     actualRewards = tf.tensor2d(actualRewards, [actualRewards.length, 1])
 
-    const history = await critic.train([states, actions], actualRewards)
-    console.log(history)
+    const Tm = await critic.train([states, actions], actualRewards)
+    console.log(Tm.history.loss)
     
     tf.engine().endScope()
 
@@ -129,6 +132,8 @@ async function trainActor(actor, critic, batch) {
                 return critic.predict([state, actor.predict(state)]).asScalar()
             })
             predQ = tf.stack(predQ)
+
+            // MAKES NO SENSE
             return tf.mean(predQ.mul(-1)).asScalar()
         });
     }
