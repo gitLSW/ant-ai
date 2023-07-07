@@ -30,8 +30,11 @@ function setupBackground(parent, floorTileDim, worldSize) {
             label.setObjectName(`floor_${i}_${j}`)
             label.setGeometry(i * floorTileDim, j * floorTileDim, floorTileDim, floorTileDim)
             label.setPixmap(getImage('floor', { width: floorTileDim, height: floorTileDim }))
+            label.show()
         }
     }
+
+    parent.show()
 }
 
 function getObstacleImage() {
@@ -53,6 +56,7 @@ function createGameObj(imageName, objName, pos, size, parent) {
     label.setPixmap(getImage(imageName, size))
 
     // label.setInlineStyle(`width:${size.width}px; height:${size.height}px`)
+    label.show()
 
     return label
 }
@@ -148,6 +152,7 @@ class Field {
         setupBackground(background, floorTileDim, this.worldSize)
 
         this.field = new QWidget(win)
+        this.field.show()
     }
 
     getPos(entityID) {
@@ -156,6 +161,11 @@ class Field {
 
     move(id, dirV) {
         const entity = this.entities[id]
+        if (!entity) {
+            console.log(`Couldn't find ${id}`)
+            return
+        }
+
         const entityPos = entity?.pos()
 
         const type = id.split('_')[0]
@@ -171,6 +181,7 @@ class Field {
         this.field = new QWidget(parent)
         this.field.setGeometry(0, 0, this.worldSize.width, this.worldSize.height)
         this.entities = populateField(this.field, this.worldSize, trainingActorID)
+        this.field.show()
     }
 
     // updateEntities() {
