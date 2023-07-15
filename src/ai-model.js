@@ -20,7 +20,7 @@ class AIModel {
      * @returns {tf.Tensor | tf.Tensor} The predictions of the best actions
      */
     predict(input) {
-        return tf.tidy(() => this.network.predict(input))
+        return this.network.predict(input)
     }
 
     // Converts the output Vector of the NN to a number between [0, 15] using angles
@@ -50,14 +50,18 @@ class AIModel {
      * @returns {number[]} The action chosen by the model: Directional Vector with dx and dy between -1 - 1
      */
     chooseAction(input) {
-        return tf.tidy(() => {
-            // Exponentially decay the exploration parameter
-            this.explorationRate *= EPSILON_DECAY
+        // Exponentially decay the exploration parameter
+        this.explorationRate *= EPSILON_DECAY
 
-            return (Math.random() < this.explorationRate) ?
-                [Math.random() * 2 - 1, Math.random() * 2 - 1] :
-                tf.tidy(() => this.predict(input).dataSync());
-        })
+        if (Math.random() < this.explorationRate) {
+            return [Math.random() * 2 - 1, Math.random() * 2 - 1]
+        }
+
+        const output = this.predict(input)
+        const movementDir = output.dataSync()
+        output.dispose()
+        
+        return movementDir
     }
 
     // Generate vector of random numbers between 0 and 1

@@ -13,7 +13,7 @@ win = new QMainWindow()
 win.setFixedSize(worldSize.width, worldSize.height)
 
 async function start() {
-    const trainingMode = false
+    const trainingMode = true
     const actor = await createActorModel()
 
     win.show()

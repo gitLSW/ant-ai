@@ -56,7 +56,7 @@ class Gym {
         // Game loop
         for (let step = 0; step < MAX_STEPS_PER_EPISODE && !gameOver; step++) {
             // Take random actions with explorationRate probability
-            const [dx, dy] = this.actor.chooseAction(inputState)
+            const [dx, dy] = this.actor.chooseAction(inputState.clone())
             this.field.move(trainingActorID, { dx, dy })
 
             // Observe the game state and calculate the reward
@@ -70,8 +70,9 @@ class Gym {
             // We log the InputTensor and the Output directly
             // const bestFutureReward = this.bestFutureReward(newFov, trainingActorID)
             // const approximatedDirection = this.actor.approximateDirection([dx, dy]).dataSync()
-            this.memory.record([inputState, [dx, dy], reward, nextInputState])
-            inputState = nextInputState
+            this.memory.record([inputState.clone(), [dx, dy], reward, nextInputState.clone()])
+            inputState.dispose()
+            inputState = nextInputState.clone()
 
             // All Ressources Empty
             if (!this.field.hasRessources()) {
@@ -80,6 +81,8 @@ class Gym {
 
             nextInputState.dispose()
         }
+
+        inputState.dispose()
     }
 
     async train() {
@@ -93,15 +96,17 @@ class Gym {
 // WHY IS THE LOSS OF CRITIC A NaN SOMETIMES ?
 async function trainCritic(targetActor, critic, batch) {
     tf.engine().startScope()
-    
+
     var states = batch.map(([state, action, reward, nextState]) => state)
     var actions = batch.map(([state, action, reward, nextState]) => action)
     var actualRewards = batch.map(([state, action, reward, nextState]) => {
         // We want the critic to find the qValue = reward + discount * future_reward
         if (nextState && 0.01 < DISCOUNT_RATE) {
             const targetAction = targetActor.predict(state)
-            // DDPG is harder to train than A2C !!! => SWITCH TO A2C
-            return reward + DISCOUNT_RATE * critic.predict([nextState, targetAction]).arraySync()[0][0]
+            const criticPred = critic.predict([nextState, targetAction])
+            const predQValue = criticPred.arraySync()[0][0]
+            criticPred.dispose()
+            return reward + DISCOUNT_RATE * predQValue
         }
 
         return reward
@@ -114,7 +119,7 @@ async function trainCritic(targetActor, critic, batch) {
 
     const Tm = await critic.train([states, actions], actualRewards)
     console.log(Tm.history.loss)
-    
+
     tf.engine().endScope()
 
     // Clean Up
@@ -129,7 +134,10 @@ async function trainActor(actor, critic, batch) {
     function loss() {
         return tf.tidy(() => {
             var predQ = batch.map(([state, action, reward, nextState]) => {
-                return critic.predict([state, actor.predict(state)]).asScalar()
+                const actorOutput = actor.predict(state)
+                const predQValue = critic.predict([state, actorOutput]).asScalar()
+                actorOutput.dispose()
+                return predQValue
             })
             predQ = tf.stack(predQ)
 

@@ -170,9 +170,11 @@ class Field {
 
         const type = id.split('_')[0]
         const movementSpeed = getMovementSpeed(type)
-        entity?.move(entityPos.x + dirV.dx * movementSpeed, entityPos.y + dirV.dy * movementSpeed)
+        entity.move(entityPos.x + dirV.dx * movementSpeed, entityPos.y + dirV.dy * movementSpeed)
+        
+        entity.show()
 
-        return entity?.pos()
+        return entity.pos()
     }
 
     reset(trainingActorID) {
@@ -249,7 +251,7 @@ class Field {
             })
 
         // Preprocess the input data
-        return tf.tidy(() => tf.tensor(inputValues).reshape([-1, INPUT_LAYER_SIZE])) // reshape is needed for some reason
+        return tf.tensor(inputValues).reshape([-1, INPUT_LAYER_SIZE]) // reshape is needed for some reason
     }
 
     hasRessources() {

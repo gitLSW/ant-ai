@@ -47,8 +47,11 @@ class Game {
             const inputState = this.field.getInputTensor(this.field.getFOV(trainingActorID), trainingActorID)
 
             // Take random actions with explorationRate probability
-            const [dx, dy] = this.actor.predict(inputState).dataSync()
+            const output = this.actor.predict(inputState)
+            inputState.dispose()
+            const [dx, dy] = output.dataSync()
             this.field.move(trainingActorID, { dx, dy })
+            output.dispose()
 
             // Observe the game state and calculate the reward
             const reward = this.computeReward(trainingActorID)
