@@ -1,14 +1,16 @@
 const tf = require('@tensorflow/tfjs-node')
 const Memory = require('./memory')
 const Field = require('./field')
-const { getPoints, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
+const { getPoints, getUnitVector, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
 
 const MAX_STEPS_PER_EPISODE = 5000; // Define a maximum number of steps per episode to avoid infinite loops
 
 const DISCOUNT_RATE = 0.95
 
 const MEMORY_SIZE = 1500
-const BATCH_SIZE = 200
+const BATCH_SIZE = 100
+
+const RECORDING_CHANCE = MEMORY_SIZE / MAX_STEPS_PER_EPISODE
 
 class Gym {
     field
@@ -56,8 +58,8 @@ class Gym {
         // Game loop
         for (let step = 0; step < MAX_STEPS_PER_EPISODE && !gameOver; step++) {
             // Take random actions with explorationRate probability
-            const [dx, dy] = this.actor.chooseAction(inputState.clone())
-            this.field.move(trainingActorID, { dx, dy })
+            const action = this.actor.chooseAction(inputState.clone())
+            this.field.move(trainingActorID, getUnitVector(action))
 
             // Observe the game state and calculate the reward
             const reward = this.computeReward(trainingActorID)
@@ -68,14 +70,15 @@ class Gym {
             const nextInputState = this.field.getInputTensor(newFov, trainingActorID)
 
             // We log the InputTensor and the Output directly
-            // const bestFutureReward = this.bestFutureReward(newFov, trainingActorID)
-            // const approximatedDirection = this.actor.approximateDirection([dx, dy]).dataSync()
-            this.memory.record([inputState.clone(), [dx, dy], reward, nextInputState.clone()])
+            if (Math.random() < RECORDING_CHANCE || reward != 0) {
+                this.memory.record([inputState.clone(), action, reward, nextInputState.clone()])
+            }
+
             inputState.dispose()
             inputState = nextInputState.clone()
 
-            // All Ressources Empty
-            if (!this.field.hasRessources()) {
+            // All Resources Empty
+            if (!this.field.hasResources()) {
                 gameOver = true
             }
 
@@ -83,26 +86,32 @@ class Gym {
         }
 
         inputState.dispose()
+
+        return score
     }
 
     async train() {
         var batch = this.memory.sample(BATCH_SIZE)
-        await trainCritic(this.actor, this.critic, batch)
+        const criticLoss = await trainCritic(this.actor, this.critic, batch)
         batch = this.memory.sample(BATCH_SIZE)
-        await trainActor(this.actor, this.critic, batch)
+        const actorLoss = await trainActor(this.actor, this.critic, batch)
+
+        return { actorLoss, criticLoss }
     }
 }
 
 // WHY IS THE LOSS OF CRITIC A NaN SOMETIMES ?
 async function trainCritic(targetActor, critic, batch) {
-    tf.engine().startScope()
-
     var states = batch.map(([state, action, reward, nextState]) => state)
     var actions = batch.map(([state, action, reward, nextState]) => action)
     var actualRewards = batch.map(([state, action, reward, nextState]) => {
         // We want the critic to find the qValue = reward + discount * future_reward
         if (nextState && 0.01 < DISCOUNT_RATE) {
-            const targetAction = targetActor.predict(state)
+            // const currCriticPred = critic.predict([state, tf.tensor(action)])
+            // const currQValue = currCriticPred.arraySync()[0][0]
+            // currCriticPred.dispose()
+
+            const targetAction = targetActor.predict(nextState)
             const criticPred = critic.predict([nextState, targetAction])
             const predQValue = criticPred.arraySync()[0][0]
             criticPred.dispose()
@@ -114,35 +123,37 @@ async function trainCritic(targetActor, critic, batch) {
 
     // Transform the arrays to 2D Tensors
     states = tf.tensor2d(states.map(state => state.arraySync()[0]), [states.length, INPUT_LAYER_SIZE])
-    actions = tf.tensor2d(actions, [actions.length, OUTPUT_LAYER_SIZE])
+    actions = tf.tensor(actions, [actions.length, OUTPUT_LAYER_SIZE])
     actualRewards = tf.tensor2d(actualRewards, [actualRewards.length, 1])
 
     const Tm = await critic.train([states, actions], actualRewards)
-    console.log(Tm.history.loss)
-
-    tf.engine().endScope()
+    const loss = Tm.history.loss[0]
 
     // Clean Up
     states.dispose()
     actions.dispose()
     actualRewards.dispose()
 
-    console.log('RISE !!!!')
+    return loss
 }
 
 async function trainActor(actor, critic, batch) {
+    var actorLoss
     function loss() {
         return tf.tidy(() => {
             var predQ = batch.map(([state, action, reward, nextState]) => {
                 const actorOutput = actor.predict(state)
                 const predQValue = critic.predict([state, actorOutput]).asScalar()
+
                 actorOutput.dispose()
                 return predQValue
             })
             predQ = tf.stack(predQ)
 
-            // MAKES NO SENSE
-            return tf.mean(predQ.mul(-1)).asScalar()
+            const loss = tf.mean(predQ.mul(-1)).asScalar()
+            actorLoss = loss.dataSync()[0]
+
+            return loss
         });
     }
 
@@ -151,7 +162,7 @@ async function trainActor(actor, critic, batch) {
     actor.getOptimizer().applyGradients(actorGradient.grads)
     tf.dispose(actorGradient)
 
-    console.log('PRAISE THE LORD !!!')
+    return actorLoss
 }
 
 module.exports = Gym

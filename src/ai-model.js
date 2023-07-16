@@ -3,7 +3,7 @@ const { MODEL_PATH, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils')
 const { readdir } = require('fs/promises')
 
 const EPSILON = 1
-const EPSILON_DECAY = 0.95
+const EPSILON_DECAY = 0.995
 
 const NUMBER_DIRECTIONS = 16
 const LEARNING_RATE = 0.05
@@ -21,6 +21,14 @@ class AIModel {
      */
     predict(input) {
         return this.network.predict(input)
+    }
+
+    act(input) {
+        const output = this.predict(input)
+        const action = output.dataSync()[0]
+        output.dispose()
+        
+        return action
     }
 
     // Converts the output Vector of the NN to a number between [0, 15] using angles
@@ -41,27 +49,23 @@ class AIModel {
         return await this.network.fit(xBatch, yBatch, {
             // epochs: 5,
             // batchSize: 32,
-            callbacks: { onBatchEnd: (batch, logs) => console.log(logs) }
+            // callbacks: { onBatchEnd: (batch, logs) => console.log(logs) }
         });
     }
 
     /**
      * @param {tf.Tensor} input
-     * @returns {number[]} The action chosen by the model: Directional Vector with dx and dy between -1 - 1
+     * @returns {number[]} The action chosen by the model: Scalar between 0 to 1
      */
     chooseAction(input) {
         // Exponentially decay the exploration parameter
         this.explorationRate *= EPSILON_DECAY
 
         if (Math.random() < this.explorationRate) {
-            return [Math.random() * 2 - 1, Math.random() * 2 - 1]
+            return Math.random()
         }
 
-        const output = this.predict(input)
-        const movementDir = output.dataSync()
-        output.dispose()
-        
-        return movementDir
+        return this.act(input)
     }
 
     // Generate vector of random numbers between 0 and 1
@@ -94,7 +98,7 @@ async function loadModel(modelName, optimizer) {
     console.log(modelName)
     network.summary()
 
-    network.compile({ optimizer, loss: 'meanSquaredError' })
+    network.compile({ optimizer, loss: 'meanAbsoluteError' })
 
     return new AIModel(network)
 }
@@ -133,13 +137,13 @@ async function createActorModel() {
                 tf.layers.dense({ units: 25, activation: 'sigmoid' }),
                 tf.layers.dense({ units: 15, activation: 'relu' }),
 
-                // Output Layer is one of 16 directions and the speed at which the actor would like to move there (between 0 and 1)
-                // denoting how fast in which direction relative to max speed the AI wants to walk
-                tf.layers.dense({ units: OUTPUT_LAYER_SIZE, activation: 'sigmoid' })
+                // the Network spits out a scalar between 0 and 1 that gets converted to a unit vector denoting the movement direction
+                tf.layers.dense({ units: OUTPUT_LAYER_SIZE, activation: 'linear' }),
+                tf.layers.reLU({ maxValue: 1 })
             ]
         });
 
-        network.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+        network.compile({ optimizer: 'adam', loss: 'meanAbsoluteError' });
 
         return new AIModel(network)
     }
@@ -168,7 +172,7 @@ async function createCriticModel() {
         const network = tf.model({ inputs: [stateInput, actionInput], outputs: output });
 
         // const sgd = tf.train.sgd(LEARNING_RATE)
-        network.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+        network.compile({ optimizer: 'sgd', loss: 'meanAbsoluteError' });
 
         return new AIModel(network)
     }

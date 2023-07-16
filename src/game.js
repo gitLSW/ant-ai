@@ -1,6 +1,6 @@
 const tf = require('@tensorflow/tfjs-node')
 const Field = require('./field')
-const { getPoints, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
+const { getPoints, getUnitVector, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
 
 const MAX_STEPS_PER_EPISODE = 20; // Define a maximum number of steps per episode to avoid infinite loops
 
@@ -47,18 +47,16 @@ class Game {
             const inputState = this.field.getInputTensor(this.field.getFOV(trainingActorID), trainingActorID)
 
             // Take random actions with explorationRate probability
-            const output = this.actor.predict(inputState)
+            const action = this.actor.act(inputState)
             inputState.dispose()
-            const [dx, dy] = output.dataSync()
-            this.field.move(trainingActorID, { dx, dy })
-            output.dispose()
+            this.field.move(trainingActorID, getUnitVector(action))
 
             // Observe the game state and calculate the reward
             const reward = this.computeReward(trainingActorID)
             score += reward
 
-            // All Ressources Empty
-            if (!this.field.hasRessources()) {
+            // All Resources Empty
+            if (!this.field.hasResources()) {
                 gameOver = true
             }
         }

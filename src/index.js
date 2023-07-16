@@ -25,10 +25,14 @@ async function start() {
 
         // Play 20 games
         for (let epoch = 0; epoch < 20; epoch++) {
-            await gym.collectSamples()
-            await gym.train()
+            const score = await gym.collectSamples()
+            console.log('Score:', score)
+            const { actorLoss, criticLoss } = await gym.train()
 
-            if (epoch % 5 == 0) {
+            console.log('Actor Loss:', actorLoss)
+            console.log('Critic Loss:', criticLoss)
+
+            if (epoch % 3 === 0) {
                 const now = new Date().toISOString()
                 actor.save('actor_' + now)
                 critic.save('critic_' + now)
@@ -36,14 +40,8 @@ async function start() {
         }
     } else {
         const game = new Game(actor, floorTileDim, win)
-        
-        // win.repaint()
-
-
-        // Play 20 games
-        // for (let epoch = 0; epoch < 20; epoch++) {
-            game.playRound()
-        // }
+        const score = game.playRound()
+        console.log('Score:', score)
     }
 }
 

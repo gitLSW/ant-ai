@@ -77,7 +77,7 @@ function createGameObj(imageName, objName, pos, size, parent) {
 function populateField(parent, worldSize, trainingActorID) {
     var entities = {}
 
-    const ressourceSize = { width: 45, height: 45 }
+    const resourceSize = { width: 45, height: 45 }
     const obstacleSize = { width: 50, height: 50 }
     const spiderSize = { width: 35, height: 35 }
     const antSize = { width: 25, height: 25 }
@@ -86,15 +86,15 @@ function populateField(parent, worldSize, trainingActorID) {
         entities[trainingActorID] = createGameObj('ant', trainingActorID, getRandomCoordiante(worldSize), antSize, parent)
     }
 
-    var hasRessource = false
-    for (let i = 0; i < 50; i++) {
+    var hasResource = false
+    for (let i = 0; i < 100; i++) {
         const randCoordinate = getRandomCoordiante(worldSize)
 
         let random = getRandom(0, 7)
-        if (!hasRessource || random == 0) {
-            hasRessource = true
-            const id = `Ressource_${i}`
-            entities[id] = createGameObj('berries', id, randCoordinate, ressourceSize, parent)
+        if (!hasResource || random == 0) {
+            hasResource = true
+            const id = `Resource_${i}`
+            entities[id] = createGameObj('berries', id, randCoordinate, resourceSize, parent)
         } else if (1 <= random && random <= 3) {
             const id = `Obstacle_${i}`
             entities[id] = createGameObj(getObstacleImage(), id, randCoordinate, obstacleSize, parent)
@@ -254,8 +254,8 @@ class Field {
         return tf.tensor(inputValues).reshape([-1, INPUT_LAYER_SIZE]) // reshape is needed for some reason
     }
 
-    hasRessources() {
-        return new Boolean(Object.values(this.entities).find(e => e.objectName().startsWith('Ressource')))
+    hasResources() {
+        return new Boolean(Object.values(this.entities).find(e => e.objectName().startsWith('Resource')))
     }
 }
 
