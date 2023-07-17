@@ -18,7 +18,6 @@ const io = require("socket.io")(server);
 
 app.use(express.static("public"));
 
-const frameRate = 1000 / 30;
 const canvas = { width: 300, height: 200 };
 let online = 0;
 
@@ -28,7 +27,7 @@ let online = 0;
 const engine = Matter.Engine.create();
 
 const worldSize = { width: 1000, height: 1000 }
-const field = new Field(worldSize, engine, frameRate)
+const field = new Field(worldSize, engine)
 
 async function start() {
   const trainingMode = true

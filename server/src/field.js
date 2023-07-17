@@ -4,7 +4,13 @@ const tf = require('@tensorflow/tfjs-node')
 const path = require('path')
 
 function getEntities(worldSize, trainingActorID) {
-    var entities = {}
+    const borderWidth = 100
+    var entities = {
+        Border_North: Matter.Bodies.rectangle(worldSize.width / 2, -borderWidth / 2, worldSize.width, borderWidth, { isStatic: true }),
+        Border_East: Matter.Bodies.rectangle(worldSize.width + borderWidth / 2, worldSize.height / 2, borderWidth, worldSize.height, { isStatic: true }),
+        Border_South: Matter.Bodies.rectangle(worldSize.width / 2, worldSize.height + borderWidth / 2, worldSize.width, borderWidth, { isStatic: true }),
+        Border_West: Matter.Bodies.rectangle(-borderWidth / 2, worldSize.height / 2, borderWidth, worldSize.height, { isStatic: true })
+    }
 
     // const resourceSize = { width: 45, height: 45 }
     // const obstacleSize = { width: 50, height: 50 }
@@ -38,7 +44,8 @@ function getEntities(worldSize, trainingActorID) {
             entities[id] = Matter.Bodies.circle(
                 randCoordinate.x,
                 randCoordinate.y,
-                25 // Radius
+                25, // Radius
+                { isStatic: true }
             )
         }
         else if (random == 4) {
@@ -68,7 +75,7 @@ function getTypeInput(entityType, actorID) {
     const actorType = actorID.split('_')[0]
 
     switch (entityType) {
-        case 'Obstacle':
+        case 'Obstacle', 'Border':
             return 1;
         case 'Ant':
             return actorType === entityType ? 2 : 3; // 2=friendly
@@ -84,10 +91,9 @@ function getTypeInput(entityType, actorID) {
 class Field {
     // if the calls to Gt still fail, we can make our own copies of all the states
     // trainingMode: only one Ant on field
-    constructor(worldSize, engine, timeDelta) {
+    constructor(worldSize, engine) {
         this.worldSize = worldSize
         this.engine = engine
-        this.timeDelta = timeDelta
     }
 
     getPos(entityID) {
@@ -103,10 +109,11 @@ class Field {
 
         const type = id.split('_')[0]
         const movementSpeed = getMovementSpeed(type)
+
         Matter.Body.setVelocity(entity, { x: dirV.dx * movementSpeed, y: dirV.dy * movementSpeed })
 
-        console.log(dirV, entity.position)
-
+        console.log(entity.position)
+        
         return entity.position
     }
 
@@ -139,7 +146,7 @@ class Field {
     collisionsWith(actorID) {
         var collisions = []
 
-        Matter.Engine.update(this.engine, this.timeDelta);
+        Matter.Engine.update(this.engine, 1);
         Matter.Events.on(this.engine, 'collisionStart', event => {
             const collisionPairs = event.pairs.map(pair => { return { a: pair.bodyA.label, b: pair.bodyB.label } })
             collisionPairs.forEach(pair => {

@@ -132,10 +132,9 @@ async function createActorModel() {
                 tf.layers.inputLayer({ inputShape: [INPUT_LAYER_SIZE], activation: 'linear' }),
 
                 // Hidden Layers
-                tf.layers.dense({ units: 30, activation: 'relu' }),
                 tf.layers.dense({ units: 25, activation: 'relu6' }),
-                tf.layers.dense({ units: 25, activation: 'sigmoid' }),
-                tf.layers.dense({ units: 15, activation: 'relu' }),
+                tf.layers.dense({ units: 20, activation: 'sigmoid' }),
+                tf.layers.dense({ units: 10, activation: 'sigmoid' }),
 
                 // the Network spits out a scalar between 0 and 1 that gets converted to a unit vector denoting the movement direction
                 tf.layers.dense({ units: OUTPUT_LAYER_SIZE, activation: 'linear' }),
@@ -159,10 +158,10 @@ async function createCriticModel() {
         console.log(`Failed to load AI model, generating a new Critic Model instead...`)
         const stateInput = tf.input({ shape: [INPUT_LAYER_SIZE], name: 'state' });
         const stateH1 = tf.layers.dense({ units: 20, activation: 'relu' }).apply(stateInput);
-        const stateH2 = tf.layers.dense({ units: 20, activation: 'relu' }).apply(stateH1);
+        const stateH2 = tf.layers.dense({ units: 15, activation: 'relu6' }).apply(stateH1);
 
         const actionInput = tf.input({ shape: [OUTPUT_LAYER_SIZE], name: 'action' });
-        const actionH1 = tf.layers.dense({ units: 5, activation: 'relu' }).apply(actionInput);
+        const actionH1 = tf.layers.dense({ units: 5, activation: 'sigmoid' }).apply(actionInput);
 
         const concatenated = tf.layers.concatenate().apply([stateH2, actionH1]);
 

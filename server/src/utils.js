@@ -21,10 +21,10 @@ const OUTPUT_LAYER_SIZE = 1 // 1 because the Network spits out a scalar between 
 
 function getMovementSpeed(type) {
     switch (type) {
-        case 'type':
-            return 10
+        case 'Ant':
+            return 5
         case 'Spider':
-            return 7
+            return 2
         default:
             return 0
     }
