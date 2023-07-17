@@ -98,7 +98,7 @@ async function loadModel(modelName, optimizer) {
     console.log(modelName)
     network.summary()
 
-    network.compile({ optimizer, loss: 'meanAbsoluteError' })
+    network.compile({ optimizer, loss: 'meanSquaredError' })
 
     return new AIModel(network)
 }
@@ -142,7 +142,7 @@ async function createActorModel() {
             ]
         });
 
-        network.compile({ optimizer: 'adam', loss: 'meanAbsoluteError' });
+        network.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
 
         return new AIModel(network)
     }
@@ -171,7 +171,7 @@ async function createCriticModel() {
         const network = tf.model({ inputs: [stateInput, actionInput], outputs: output });
 
         // const sgd = tf.train.sgd(LEARNING_RATE)
-        network.compile({ optimizer: 'sgd', loss: 'meanAbsoluteError' });
+        network.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
 
         return new AIModel(network)
     }

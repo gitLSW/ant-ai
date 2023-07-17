@@ -4,12 +4,23 @@ const tf = require('@tensorflow/tfjs-node')
 const path = require('path')
 
 function getEntities(worldSize, trainingActorID) {
+    const ANT_COLL_GROUP    = 0b0001
+    const OBJECT_COLL_GROUP = 0b0010
+    const ENEMY_COLL_GROUP  = 0b0100
+
     const borderWidth = 100
+
+    // Matter.Bodies.rectangle sets the center !!
+    const borderCollFilter = {
+        group: 0,
+        mask: 1,
+        category: 2,
+    }
     var entities = {
-        Border_North: Matter.Bodies.rectangle(worldSize.width / 2, -borderWidth / 2, worldSize.width, borderWidth, { isStatic: true }),
-        Border_East: Matter.Bodies.rectangle(worldSize.width + borderWidth / 2, worldSize.height / 2, borderWidth, worldSize.height, { isStatic: true }),
-        Border_South: Matter.Bodies.rectangle(worldSize.width / 2, worldSize.height + borderWidth / 2, worldSize.width, borderWidth, { isStatic: true }),
-        Border_West: Matter.Bodies.rectangle(-borderWidth / 2, worldSize.height / 2, borderWidth, worldSize.height, { isStatic: true })
+        Border_North: Matter.Bodies.rectangle(worldSize.width / 2, -borderWidth / 2, worldSize.width, borderWidth, { isStatic: true, label: 'Border_North', collisionFilter: borderCollFilter }),
+        Border_East: Matter.Bodies.rectangle(worldSize.width + borderWidth / 2, worldSize.height / 2, borderWidth, worldSize.height, { isStatic: true, label: 'Border_East', collisionFilter: borderCollFilter }),
+        Border_South: Matter.Bodies.rectangle(worldSize.width / 2, worldSize.height + borderWidth / 2, worldSize.width, borderWidth, { isStatic: true, label: 'Border_South', collisionFilter: borderCollFilter }),
+        Border_West: Matter.Bodies.rectangle(-borderWidth / 2, worldSize.height / 2, borderWidth, worldSize.height, { isStatic: true, label: 'Border_West', collisionFilter: borderCollFilter })
     }
 
     // const resourceSize = { width: 45, height: 45 }
@@ -22,7 +33,15 @@ function getEntities(worldSize, trainingActorID) {
         entities[trainingActorID] = Matter.Bodies.circle(
             randCoordinate.x,
             randCoordinate.y,
-            12.5 // Radius
+            12.5, // Radius
+            {
+                label: trainingActorID,
+                collisionFilter: {
+                    group: 0,
+                    mask: OBJECT_COLL_GROUP | ENEMY_COLL_GROUP,
+                    category: ANT_COLL_GROUP,
+                }
+            }
         )
     }
 
@@ -37,7 +56,15 @@ function getEntities(worldSize, trainingActorID) {
             entities[id] = Matter.Bodies.circle(
                 randCoordinate.x,
                 randCoordinate.y,
-                22.5 // Radius
+                22.5, // Radius
+                {
+                    label: id,
+                    collisionFilter: {
+                        group: 0,
+                        mask: ANT_COLL_GROUP,
+                        category: OBJECT_COLL_GROUP,
+                    }
+                }
             )
         } else if (1 <= random && random <= 3) {
             const id = `Obstacle_${i}`
@@ -45,7 +72,15 @@ function getEntities(worldSize, trainingActorID) {
                 randCoordinate.x,
                 randCoordinate.y,
                 25, // Radius
-                { isStatic: true }
+                {
+                    isStatic: true,
+                    label: id,
+                    collisionFilter: {
+                        group: 0,
+                        mask: ANT_COLL_GROUP | ENEMY_COLL_GROUP,
+                        category: OBJECT_COLL_GROUP,
+                    }
+                }
             )
         }
         else if (random == 4) {
@@ -53,7 +88,15 @@ function getEntities(worldSize, trainingActorID) {
             entities[id] = Matter.Bodies.circle(
                 randCoordinate.x,
                 randCoordinate.y,
-                17.5 // Radius
+                17.5, // Radius
+                {
+                    label: id,
+                    collisionFilter: {
+                        group: 0,
+                        mask: ANT_COLL_GROUP | OBJECT_COLL_GROUP,
+                        category: ENEMY_COLL_GROUP,
+                    }
+                }
             )
         }
         else if (!trainingActorID && random == 5) {
@@ -61,7 +104,15 @@ function getEntities(worldSize, trainingActorID) {
             entities[id] = Matter.Bodies.circle(
                 randCoordinate.x,
                 randCoordinate.y,
-                12.5 // Radius
+                12.5, // Radius
+                {
+                    label: id,
+                    collisionFilter: {
+                        group: 0,
+                        mask: OBJECT_COLL_GROUP | ENEMY_COLL_GROUP,
+                        category: ANT_COLL_GROUP,
+                    }
+                }
             )
         }
     }
@@ -112,8 +163,11 @@ class Field {
 
         Matter.Body.setVelocity(entity, { x: dirV.dx * movementSpeed, y: dirV.dy * movementSpeed })
 
-        console.log(entity.position)
-        
+        if (entity.position.x < 0 || this.worldSize.width < entity.position.x ||
+            entity.position.y < 0 || this.worldSize.height < entity.position.y) {
+            console.log(entity.position)
+        }
+
         return entity.position
     }
 
@@ -146,24 +200,25 @@ class Field {
     collisionsWith(actorID) {
         var collisions = []
 
-        Matter.Engine.update(this.engine, 1);
+        Matter.Engine.update(this.engine, 1)
         Matter.Events.on(this.engine, 'collisionStart', event => {
             const collisionPairs = event.pairs.map(pair => { return { a: pair.bodyA.label, b: pair.bodyB.label } })
-            collisionPairs.forEach(pair => {
-                const hasAnt = pair.a.startsWith('Ant') || pair.b.startsWith('Ant')
-                const hasSpider = pair.a.startsWith('Spider') || pair.b.startsWith('Spider')
-                const hasRessource = pair.a.startsWith('Ressource') || pair.b.startsWith('Ressource')
+            console.log(collisionPairs)
+            // collisionPairs.forEach(pair => {
+            //     const hasAnt = pair.a.startsWith('Ant') || pair.b.startsWith('Ant')
+            //     const hasSpider = pair.a.startsWith('Spider') || pair.b.startsWith('Spider')
+            //     const hasRessource = pair.a.startsWith('Ressource') || pair.b.startsWith('Ressource')
 
-                if (hasAnt && hasRessource) {
-                    dispatch({ type: 'points', points: +20 })
-                    currentPoints += 20
-                }
+            //     if (hasAnt && hasRessource) {
+            //         dispatch({ type: 'points', points: +20 })
+            //         currentPoints += 20
+            //     }
 
-                if (hasAnt && hasSpider) {
-                    dispatch({ type: 'points', points: -10 })
-                    currentPoints -= 10
-                }
-            })
+            //     if (hasAnt && hasSpider) {
+            //         dispatch({ type: 'points', points: -10 })
+            //         currentPoints -= 10
+            //     }
+            // })
         })
 
         return collisions
