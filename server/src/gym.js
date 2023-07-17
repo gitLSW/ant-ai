@@ -58,12 +58,11 @@ class Gym {
         // Game loop
         for (let step = 0; step < MAX_STEPS_PER_EPISODE && !gameOver; step++) {
             // Take random actions with explorationRate probability
-            const action = this.actor.chooseAction(inputState.clone())
-            this.field.move(trainingActorID, getUnitVector(action))
+            const { dir, speed } = this.actor.chooseAction(inputState.clone())
+            this.field.move(trainingActorID, getUnitVector(dir), speed)
 
             // Observe the game state and calculate the reward
             const reward = this.computeReward(trainingActorID)
-            if (reward != 0) { console.log(reward) }
             score += reward
 
             // Get next State
@@ -72,7 +71,7 @@ class Gym {
 
             // We log the InputTensor and the Output directly
             if (Math.random() < RECORDING_CHANCE || reward != 0) {
-                this.memory.record([inputState.clone(), action, reward, nextInputState.clone()])
+                this.memory.record([inputState.clone(), [dir, speed], reward, nextInputState.clone()])
             }
 
             inputState.dispose()

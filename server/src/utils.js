@@ -17,7 +17,7 @@ function getUnitVector(x) {
 
 const NUMBER_ENTITIES_IN_FOV = 5
 const INPUT_LAYER_SIZE = NUMBER_ENTITIES_IN_FOV * 3 // MUST BE A MULTIPLE OF 5: Because the Input Layer consists of the closest 5 Objects to the Ant where each Objects uses 2 Neurons for Pos Relative to Ant (=> dx, dy) and 1 for which type the object is
-const OUTPUT_LAYER_SIZE = 1 // 1 because the Network spits out a scalar between 0 and 1 that gets converted to a unit vector
+const OUTPUT_LAYER_SIZE = 2 // 2 because the Network spits out a scalar between 0 and 1 that gets converted to a unit vector and a scalar between 0 and 1 that represents the speed
 
 function getMovementSpeed(type) {
     switch (type) {

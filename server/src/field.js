@@ -151,7 +151,7 @@ class Field {
         return this.entities[entityID].position
     }
 
-    move(id, dirV) {
+    move(id, dirV, speed) {
         const entity = this.entities[id]
         if (!entity) {
             console.log(`Couldn't find ${id}`)
@@ -161,7 +161,7 @@ class Field {
         const type = id.split('_')[0]
         const movementSpeed = getMovementSpeed(type)
 
-        Matter.Body.setVelocity(entity, { x: dirV.dx * movementSpeed, y: dirV.dy * movementSpeed })
+        Matter.Body.setVelocity(entity, { x: dirV.dx * speed * movementSpeed, y: dirV.dy * speed * movementSpeed })
 
         if (entity.position.x < 0 || this.worldSize.width < entity.position.x ||
             entity.position.y < 0 || this.worldSize.height < entity.position.y) {
