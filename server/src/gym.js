@@ -1,6 +1,5 @@
 const tf = require('@tensorflow/tfjs-node')
 const Memory = require('./memory')
-const Field = require('./field')
 const { getPoints, getUnitVector, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
 
 const MAX_STEPS_PER_EPISODE = 5000; // Define a maximum number of steps per episode to avoid infinite loops
@@ -16,11 +15,12 @@ class Gym {
     field
     memory = new Memory(MEMORY_SIZE)
 
-    constructor(actor, critic, floorTileDim, win) {
+    constructor(actor, critic, field, io) {
+        this.io = io
         this.actor = actor
         this.targetActor = actor // The actual actor to train
         this.critic = critic
-        this.field = new Field(win, floorTileDim)
+        this.field = field
     }
 
     computeReward(actorID) {
@@ -83,6 +83,8 @@ class Gym {
             }
 
             nextInputState.dispose()
+
+            // this.io.emit("update state", this.field.serialize());
         }
 
         inputState.dispose()

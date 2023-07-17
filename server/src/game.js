@@ -7,9 +7,9 @@ const MAX_STEPS_PER_EPISODE = 20; // Define a maximum number of steps per episod
 class Game {
     field
 
-    constructor(actor, floorTileDim, win) {
+    constructor(actor, worldSize) {
         this.actor = actor
-        this.field = new Field(win, floorTileDim)
+        this.field = new Field(worldSize)
     }
 
     computeReward(actorID) {
