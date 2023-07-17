@@ -63,6 +63,7 @@ class Gym {
 
             // Observe the game state and calculate the reward
             const reward = this.computeReward(trainingActorID)
+            if (reward != 0) { console.log(reward) }
             score += reward
 
             // Get next State

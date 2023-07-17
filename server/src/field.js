@@ -4,9 +4,9 @@ const tf = require('@tensorflow/tfjs-node')
 const path = require('path')
 
 function getEntities(worldSize, trainingActorID) {
-    const ANT_COLL_GROUP    = 0b0001
+    const ANT_COLL_GROUP = 0b0001
     const OBJECT_COLL_GROUP = 0b0010
-    const ENEMY_COLL_GROUP  = 0b0100
+    const ENEMY_COLL_GROUP = 0b0100
 
     const borderWidth = 100
 
@@ -196,45 +196,45 @@ class Field {
             .sort((a, b) => a.distance - b.distance)
     }
 
-    // USE MATTER.js
     collisionsWith(actorID) {
-        var collisions = []
-
         Matter.Engine.update(this.engine, 1)
-        Matter.Events.on(this.engine, 'collisionStart', event => {
-            const collisionPairs = event.pairs.map(pair => { return { a: pair.bodyA.label, b: pair.bodyB.label } })
-            console.log(collisionPairs)
-            // collisionPairs.forEach(pair => {
-            //     const hasAnt = pair.a.startsWith('Ant') || pair.b.startsWith('Ant')
-            //     const hasSpider = pair.a.startsWith('Spider') || pair.b.startsWith('Spider')
-            //     const hasRessource = pair.a.startsWith('Ressource') || pair.b.startsWith('Ressource')
+        const actor = this.entities[actorID]
+        
+        return Object.entries(this.entities).map(([entityID, entity]) => {
+            if (entityID === actorID) {
+                return null
+            }
 
-            //     if (hasAnt && hasRessource) {
-            //         dispatch({ type: 'points', points: +20 })
-            //         currentPoints += 20
-            //     }
+            const collision = Matter.Collision.collides(actor, entity)
+            if (collision) {
+                return { id: entityID, type: entityID.split('_')[0] }
+            }
 
-            //     if (hasAnt && hasSpider) {
-            //         dispatch({ type: 'points', points: -10 })
-            //         currentPoints -= 10
-            //     }
-            // })
+            return null
         })
+        .filter(Boolean)
 
-        return collisions
+        // Matter.Events.on(this.engine, 'collisionStart', event => {
+        //     console.log('2')
+        //     const collisions = event.pairs
+        //         .map(pair => { return { a: pair.bodyA.label, b: pair.bodyB.label } })
+        //         .map(pair => {
+        //             const aType = pair.a.split('_')[0]
+        //             const bType = pair.b.split('_')[0]
 
-        // const actor = this.entities[actorID]
-        // const actorGeom = actor?.geometry()
+        //             if (pair.a !== actorID && pair.b !== actorID) {
+        //                 return null
+        //             }
 
-        // return Object.entities(this.entities)
-        //     .filter(([entityID, entity]) => actorID !== entityID && this.isIntersecting(actorGeom, entity.geometry()))
-        //     .map(([entityID, entity]) => {
-        //         const type = entityID.split('_')[0]
-        //         return { id: entityID, type }
-        //     })
+        //             return {
+        //                 id: aType == 'Ant' ? pair.b : pair.a,
+        //                 type: aType == 'Ant' ? bType : aType
+        //             }
+        //         })
+        //         .filter(Boolean)
+        // })
     }
 
-    // Matter.js shit maybe ??!
     delete(id) {
         const entity = this.entities[id]
         Matter.Composite.remove(this.engine.world, entity);
