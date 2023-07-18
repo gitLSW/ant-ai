@@ -125,7 +125,7 @@ async function trainCritic(targetActor, critic, targetCritic, batch) {
     const predActions = targetActor.predictMany(nextStates)
     const input = predActions.map((predAction, i) => [nextStates[i], predAction])
     const predNextQ = tf.stack(targetCritic.predictMany(input).map(output => output.asScalar()))
-    const targetQ = rewards.add(predNextQ)
+    const targetQ = rewards.add(predNextQ.mul(DISCOUNT_RATE))
 
     const states = tf.tensor2d(batch.map(([state, action, reward, nextState]) => state.dataSync()), [batch.length, INPUT_LAYER_SIZE])
     const actions = tf.tensor2d(batch.map(([state, action, reward, nextState]) => action), [batch.length, OUTPUT_LAYER_SIZE])

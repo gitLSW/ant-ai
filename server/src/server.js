@@ -68,7 +68,7 @@ async function start() {
       console.log('Actor Loss:', actorLoss, 'Stats:', getStats(actorLosses))
       console.log('Critic Loss:', criticLoss, 'Stats:', getStats(criticLosses))
 
-      if (epoch % 2 === 0) {
+      if (epoch % 20 == 0) {
         gym.updateTargetActor()
         gym.updateTargetCritic()
 
