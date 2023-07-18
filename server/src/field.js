@@ -23,11 +23,6 @@ function getEntities(worldSize, trainingActorID) {
         Border_West: Matter.Bodies.rectangle(-borderWidth / 2, worldSize.height / 2, borderWidth, worldSize.height, { isStatic: true, label: 'Border_West', collisionFilter: borderCollFilter })
     }
 
-    // const resourceSize = { width: 45, height: 45 }
-    // const obstacleSize = { width: 50, height: 50 }
-    // const spiderSize = { width: 35, height: 35 }
-    // const antSize = { width: 25, height: 25 }
-
     if (trainingActorID) {
         const randCoordinate = getRandomCoordiante(worldSize)
         entities[trainingActorID] = Matter.Bodies.circle(
@@ -199,7 +194,7 @@ class Field {
     collisionsWith(actorID) {
         Matter.Engine.update(this.engine, 1)
         const actor = this.entities[actorID]
-        
+
         return Object.entries(this.entities).map(([entityID, entity]) => {
             if (entityID === actorID) {
                 return null
@@ -212,7 +207,7 @@ class Field {
 
             return null
         })
-        .filter(Boolean)
+            .filter(Boolean)
 
         // Matter.Events.on(this.engine, 'collisionStart', event => {
         //     console.log('2')
@@ -258,6 +253,25 @@ class Field {
 
     hasResources() {
         return new Boolean(Object.keys(this.entities).find(entityID => entityID.startsWith('Resource')))
+    }
+
+    serialize(filterType) {
+        // const resourceSize = { width: 45, height: 45 }
+        // const obstacleSize = { width: 50, height: 50 }
+        // const spiderSize = { width: 35, height: 35 }
+        // const antSize = { width: 25, height: 25 }
+
+        return Object.entries(this.entities).map(([entityID, entity]) => {
+            const type = entityID.split('_')[0]
+            if (filterType != null && filterType !== type) {
+                return null
+            }
+
+            const bounds = entity.bounds
+            const size = { width: bounds.max.x - bounds.min.x, height: bounds.max.y - bounds.min.y }
+            return { id: entityID, pos: entity.position, size }
+        })
+        .filter(Boolean)
     }
 }
 

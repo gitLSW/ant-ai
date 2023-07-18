@@ -3,44 +3,23 @@ const Matter = require("matter-js");
 const Gym = require("./gym")
 // const Game = require("./game")
 const Field = require("./field")
+const { getStats } = require('./utils')
 const { createActorModel, createCriticModel } = require('./ai-model')
-// const { plot } = require('nodeplotlib');
+const express = require("express");
+const createSocket = require("socket.io")
+const http = require("http")
 
-// CLEAN UP UNDISPOSED TENSORS:
-// The way to clean any unused tensors in async code is to wrap the code that creates them between a startScope() and an endScope() call.
-// tf.engine().startScope()
-// tf.engine().endScope()
-
-// const express = require("express");
-// const app = express()
-// const server = require("http").createServer(app);
-// const io = require("socket.io")(server);
-
-// app.use(express.static("public"));
-
-const canvas = { width: 300, height: 200 };
-let online = 0;
-
-
-const engine = Matter.Engine.create();
-
-const worldSize = { width: 1000, height: 1000 }
-const field = new Field(worldSize, engine)
-
-function getStats(array) {
-  if (!Array.isArray(array)) {
-    return new Error('Input must be a array.');
-  }
-
-  const sum = array.reduce((acc, val) => acc + val, 0);
-  const mean = sum / array.length;
-
-  const sd = Math.sqrt(array.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (array.length - 1));
-
-  return { sd, mean };
-}
+const app = express()
+app.use(express.static("public"));
+const server = http.createServer(app);
+const io = createSocket(server);
 
 async function start() {
+  const engine = Matter.Engine.create();
+
+  const worldSize = { width: 1000, height: 1000 }
+  const field = new Field(worldSize, engine)
+
   const trainingMode = true
   const actor = await createActorModel()
 
@@ -49,7 +28,7 @@ async function start() {
     const critic = await createCriticModel()
     const targetCritic = await createCriticModel()
 
-    const gym = new Gym(actor, targetActor, critic, targetCritic, field)
+    const gym = new Gym(actor, targetActor, critic, targetCritic, field, io)
 
     var actorLosses = []
     var criticLosses = []
@@ -57,7 +36,7 @@ async function start() {
     var epoch = 0
     while (true) {
       epoch += 1
-      
+
       const score = await gym.collectSamples()
       console.log('Epoch:', epoch, 'Score:', score, '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
       const { actorLoss, criticLoss } = await gym.train()
@@ -73,8 +52,8 @@ async function start() {
         gym.updateTargetCritic()
 
         const now = new Date().toISOString()
-        actor.save('actor_' + now)
-        critic.save('critic_' + now)
+        // actor.save('actor_' + now)
+        // critic.save('critic_' + now)
 
         // const data = [
         //   {
@@ -99,29 +78,31 @@ async function start() {
   }
 }
 
-start()
 
 
+io.on("connection", socket => {
+  console.log('CONNECTION')
+  start()
+
+  // socket.on("disconnect", () => --online);
+  // socket.on("register", cb => cb({ canvas }));
+  // socket.on("player click", coordinates => {
+  //   entities.boxes.forEach(box => {
+  //     // servers://stackoverflow.com/a/50472656/6243352
+  //     const force = 0.01;
+  //     const deltaVector = Matter.Vector.sub(box.position, coordinates);
+  //     const normalizedDelta = Matter.Vector.normalise(deltaVector);
+  //     const forceVector = Matter.Vector.mult(normalizedDelta, force);
+  //     Matter.Body.applyForce(box, box.position, forceVector);
+  //   });
+  // });
+});
+
+app.get('/', async (req, res) => {
+  res.sendFile(__dirname + '/client/renderer.html')
+})
 
 
-
-
-// io.on("connection", socket => {
-//   online++;
-//   socket.on("disconnect", () => --online);
-//   socket.on("register", cb => cb({ canvas }));
-//   socket.on("player click", coordinates => {
-//     entities.boxes.forEach(box => {
-//       // servers://stackoverflow.com/a/50472656/6243352
-//       const force = 0.01;
-//       const deltaVector = Matter.Vector.sub(box.position, coordinates);
-//       const normalizedDelta = Matter.Vector.normalise(deltaVector);
-//       const forceVector = Matter.Vector.mult(normalizedDelta, force);
-//       Matter.Body.applyForce(box, box.position, forceVector);
-//     });
-//   });
-// });
-
-// server.listen(process.env.PORT, () =>
-//   console.log("server listening on " + process.env.PORT)
-// );
+server.listen(4000, () => {
+  console.log("server listening on " + 4000)
+});

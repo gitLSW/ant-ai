@@ -69,6 +69,8 @@ class Gym {
         const trainingActorID = 'Ant_Player'
         this.field.reset(trainingActorID)
 
+        this.io.emit('game start', this.field.serialize())
+
         let inputState = this.field.getInputTensor(this.field.getFOV(trainingActorID), trainingActorID)
 
         // Game loop
@@ -99,10 +101,14 @@ class Gym {
                 gameOver = true
             }
 
-            // this.io.emit("update state", this.field.serialize());
+            if (step % 50 == 0) {
+                this.io.emit('ant update', this.field.serialize('Ant'))
+            }
         }
 
         inputState.dispose()
+
+        this.io.emit('game end', score)
 
         return score
     }
