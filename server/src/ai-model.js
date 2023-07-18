@@ -3,10 +3,7 @@ const { MODEL_PATH, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils')
 const { readdir } = require('fs/promises')
 
 const EPSILON = 1
-const EPSILON_DECAY = 0.995
-
-const NUMBER_DIRECTIONS = 16
-const LEARNING_RATE = 0.05
+const EPSILON_DECAY = 0.9995
 
 class AIModel {
     explorationRate = EPSILON
@@ -21,6 +18,14 @@ class AIModel {
      */
     predict(input) {
         return this.network.predict(input)
+    }
+
+    predictMany(inputs) {
+        return inputs.map(input => this.predict(input))
+    }
+
+    predictMany(inputs) {
+        return inputs.map(input => this.predict(input))
     }
 
     act(input) {
@@ -55,17 +60,21 @@ class AIModel {
 
     /**
      * @param {tf.Tensor} input
-     * @returns {number[]} The action chosen by the model: Scalar between 0 to 1
+     * @returns {{ dir: 0 to 1, speed: 0 to 1 }} The action chosen by the model: Scalar between 0 to 1
      */
     chooseAction(input) {
         // Exponentially decay the exploration parameter
         this.explorationRate *= EPSILON_DECAY
 
         if (Math.random() < this.explorationRate) {
-            return { dir: Math.random(), speed: Math.random() }
+            return { dir: Math.random(), speed: 1 }
         }
 
         return this.act(input)
+    }
+
+    resetExplorationRate() {
+        this.explorationRate = EPSILON
     }
 
     // Generate vector of random numbers between 0 and 1
@@ -75,6 +84,10 @@ class AIModel {
 
     getWeights(trainable = false) {
         return this.network.getWeights(trainable);
+    }
+
+    getLayerWeights(trainable = false) {
+        return this.network.layers.map(layer => layer.getWeights(trainable))
     }
 
     getOptimizer() {
@@ -88,6 +101,16 @@ class AIModel {
             console.log('FAILED TO SAVE')
         }
     }
+
+    mutate(layersWeights, tau) {
+        layersWeights.forEach((layerWeights, i) => {
+            var networkLayerWeights = this.network.layers[i].getWeights();
+            for (let i = 0; i < layerWeights.length; i++) {
+                networkLayerWeights[i] = tf.mul(tau, layerWeights[i]).add(tf.mul(1 - tau, networkLayerWeights[i]));
+            }
+            this.network.layers[i].setWeights(networkLayerWeights);
+        })
+    }
 }
 
 
@@ -96,7 +119,6 @@ async function loadModel(modelName, optimizer) {
     const network = await tf.loadLayersModel(`file://${MODEL_PATH}/${modelName}/model.json`)
 
     console.log(modelName)
-    network.summary()
 
     network.compile({ optimizer, loss: 'meanSquaredError' })
 
@@ -125,22 +147,22 @@ async function createActorModel() {
     } catch (e) {
         console.log(e)
 
-        console.log(`Failed to load AI model, generating a new Actor Model instead...`)
+        console.error(`Failed to load AI model, generating a new Actor Model instead...`)
         const network = tf.sequential({
             layers: [
                 // Input Layer
                 tf.layers.inputLayer({ inputShape: [INPUT_LAYER_SIZE], activation: 'linear' }),
 
                 // Hidden Layers
-                tf.layers.dense({ units: 25, activation: 'relu6' }),
-                tf.layers.dense({ units: 20, activation: 'sigmoid' }),
-                tf.layers.dense({ units: 10, activation: 'sigmoid' }),
+                tf.layers.dense({ units: 15, activation: 'relu' }),
+                tf.layers.dense({ units: 10, activation: 'relu6' }),
+                tf.layers.dense({ units: 5, activation: 'sigmoid' }),
 
                 // the Network spits out two scalars between 0 and 1:
                 // - one that gets converted to a unit vector denoting the movement direction
                 // - the other is the speed that the actor is moving at
                 tf.layers.dense({ units: OUTPUT_LAYER_SIZE, activation: 'linear' }),
-                tf.layers.reLU({ maxValue: 1 })
+                tf.layers.reLU({ maxValue: 1 }) // This layer constrains the previous layer between 0 and 1
             ]
         });
 
@@ -157,17 +179,16 @@ async function createCriticModel() {
     } catch (e) {
         console.log(e)
 
-        console.log(`Failed to load AI model, generating a new Critic Model instead...`)
+        console.error(`Failed to load AI model, generating a new Critic Model instead...`)
         const stateInput = tf.input({ shape: [INPUT_LAYER_SIZE], name: 'state' });
-        const stateH1 = tf.layers.dense({ units: 20, activation: 'relu' }).apply(stateInput);
-        const stateH2 = tf.layers.dense({ units: 15, activation: 'relu6' }).apply(stateH1);
+        const stateH1 = tf.layers.dense({ units: 8, activation: 'sigmoid' }).apply(stateInput);
 
         const actionInput = tf.input({ shape: [OUTPUT_LAYER_SIZE], name: 'action' });
-        const actionH1 = tf.layers.dense({ units: 5, activation: 'sigmoid' }).apply(actionInput);
 
-        const concatenated = tf.layers.concatenate().apply([stateH2, actionH1]);
+        const concatenated = tf.layers.concatenate().apply([stateH1, actionInput]);
+        const concatenatedH1 = tf.layers.dense({ units: 5, activation: 'sigmoid' }).apply(concatenated);
 
-        const output = tf.layers.dense({ units: 1, activation: 'linear' }).apply(concatenated);
+        const output = tf.layers.dense({ units: 1, activation: 'linear' }).apply(concatenatedH1);
 
         // Create the model
         const network = tf.model({ inputs: [stateInput, actionInput], outputs: output });

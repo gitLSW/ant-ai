@@ -18,7 +18,7 @@ class Memory {
     record(gameRound) {
         this.memories.push(gameRound);
         if (this.memories.length > this.maxMemory) {
-            let [state,,, nextState] = this.memories.shift();
+            let [state, action, reward, nextState] = this.memories.shift();
             state.dispose();
             nextState.dispose();
         }
@@ -29,7 +29,8 @@ class Memory {
      * @returns {Array} Randomly selected samples
      */
     sample(nSamples) {
-        return sampleSize(this.memories, nSamples);
+        const rewards = this.memories.filter(([state, action, reward, nextState]) => reward != 0)
+        return sampleSize(this.memories, nSamples - rewards.length).concat(rewards);
         // var samples = []
         // var prevIndices = []
         // nSamples = Math.min([nSamples, this.maxMemory])

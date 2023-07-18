@@ -165,7 +165,7 @@ class Field {
 
         if (entity.position.x < 0 || this.worldSize.width < entity.position.x ||
             entity.position.y < 0 || this.worldSize.height < entity.position.y) {
-            console.log(entity.position)
+            console.error(entity.position)
         }
 
         return entity.position
