@@ -15,13 +15,9 @@ function getUnitVector(outputScalar) {
     return { dx: Math.cos(angle), dy: Math.sin(angle) }; // Return the dx, dy coordinates
 }
 
-function getStats(array, limit) {
+function getStats(array) {
     if (!Array.isArray(array)) {
         return new Error('Input must be a array.');
-    }
-
-    if (limit) {
-        array = array.slice(-limit)
     }
 
     const sum = array.reduce((acc, val) => acc + val, 0);
@@ -39,9 +35,9 @@ const OUTPUT_LAYER_SIZE = 1 // 1 because the Network spits out a scalar between 
 function getMovementSpeed(type) {
     switch (type) {
         case 'Ant':
-            return 3
+            return 10
         case 'Spider':
-            return 1
+            return 7
         default:
             return 0
     }

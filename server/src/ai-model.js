@@ -1,9 +1,10 @@
 const tf = require('@tensorflow/tfjs-node')
 const { MODEL_PATH, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils')
-const { readdir } = require('fs/promises')
+const { readdir, rm } = require('fs/promises')
+const path = require('path')
 
 const EPSILON = 1
-const EPSILON_DECAY = 0.9995
+const EPSILON_DECAY = 0.995 // Make sure this is high enough that at about 1/2 of the MAX_STEPS_PER_EPISODE the chance of randomness is 1/4
 
 class AIModel {
     explorationRate = EPSILON
@@ -94,9 +95,19 @@ class AIModel {
         return this.network.optimizer
     }
 
-    async save(modelName) {
+    async save(modelType, newMin) {
+        newMin = Math.abs(newMin)
         try {
+            const now = new Date().toISOString()
+            const modelName = `${modelType}_${now}` + (newMin ? `_min_${newMin.toFixed(5)}` : '')
             await this.network.save(`file://${MODEL_PATH}/${modelName}`)
+
+            const latestPathToKeep = (await getLatestModels(modelType))[2]
+            if (latestPathToKeep) {
+                const keepModelName = latestPathToKeep.split('/').pop()
+                const keepDate = keepModelName.split('_')[1]
+                await deleteModels(modelType, keepDate, newMin)
+            }
         } catch {
             console.log('FAILED TO SAVE')
         }
@@ -115,34 +126,65 @@ class AIModel {
 
 
 async function loadModel(modelName, optimizer) {
-    console.log(`Loading AI model ${modelName} from ${MODEL_PATH}...`)
+    console.log(`Loading AI model ${modelName} from ${MODEL_PATH}/${modelName}`)
     const network = await tf.loadLayersModel(`file://${MODEL_PATH}/${modelName}/model.json`)
-
-    console.log(modelName)
-
     network.compile({ optimizer, loss: 'meanSquaredError' })
 
     return new AIModel(network)
 }
 
-async function findNewestModel(modelType) {
-    const regex = new RegExp(`^${modelType}_\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z$`)
-    const directories = (await readdir(MODEL_PATH, { withFileTypes: true }))
+async function getLatestModels(modelType) {
+    const folderNames = Array.from(await readdir(MODEL_PATH, { withFileTypes: true }))
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name)
-        .filter(name => regex.test(name))
-        .sort((a, b) => b.localeCompare(a)); // Sort directories in descending order
+        .filter(name => name.split('_')[0] === modelType)
 
-    if (0 < directories.length) {
-        return directories[0]; // Return only the latest version
+    if (0 < folderNames.length) {
+        return folderNames.sort((a, b) => {
+            const aDate = a.split('_')[1]
+            const bDate = b.split('_')[1]
+            return bDate.localeCompare(aDate)
+        })
     } else {
-        return null; // No matching subdirectories found
+        return []; // No matching subdirectories found
+    }
+}
+
+async function deleteModels(targetType, targetDate, newMinLoss) {
+    targetDate = new Date(targetDate)
+    const foldersToDelete = Array.from(await readdir(MODEL_PATH, { withFileTypes: true }))
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name)
+        .map(folderName => {
+            const folderPath = path.join(MODEL_PATH, folderName);
+
+            // Extract date from the folder name
+            const [folderType, datePart, , minLossPart] = folderName.split('_');
+            const folderDate = new Date(datePart);
+            const folderMinLoss = new Number(minLossPart);
+
+            // Check if the folder contains "_min_" and decide whether to delete it based on shouldDeleteMinFolders flag
+            if (targetDate <= folderDate) {
+                return null
+            }
+
+            if (newMinLoss && folderMinLoss && folderMinLoss < newMinLoss) {
+                return null
+            }
+
+            return targetType === folderType ? folderPath : null
+        })
+        .filter(Boolean)
+
+    for (const folderPath of foldersToDelete) {
+        await rm(folderPath, { recursive: true })
+        // console.log(`Deleted folder: ${folderPath}`)
     }
 }
 
 async function createActorModel() {
     try {
-        const newestModelName = await findNewestModel('actor')
+        const newestModelName = (await getLatestModels('actor'))[0]
         return await loadModel(newestModelName, 'adam')
     } catch (e) {
         console.log(e)
@@ -174,7 +216,7 @@ async function createActorModel() {
 
 async function createCriticModel() {
     try {
-        const newestModelName = await findNewestModel('critic')
+        const newestModelName = (await getLatestModels('critic'))[0]
         return await loadModel(newestModelName, 'sgd')
     } catch (e) {
         console.log(e)

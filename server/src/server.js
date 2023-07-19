@@ -24,6 +24,8 @@ async function start() {
   const trainingMode = true
   const actor = await createActorModel()
 
+  const statsBufferSize = 400 // If the mean is not changing, decrease this to see if it is just fluctuating (Not good)
+
   if (trainingMode) {
     const targetActor = await createActorModel()
     const critic = await createCriticModel()
@@ -31,7 +33,10 @@ async function start() {
 
     const gym = new Gym(actor, targetActor, critic, targetCritic, field)
 
+    var minActorLoss = 1.6 // Establish BAseline by looking at the output
     var actorLosses = []
+
+    var minCriticLoss = 3.8166921131871407 // Establish Bseline by looking at the output
     var criticLosses = []
     // for (let epoch = 0; epoch < 500; epoch++) {
     var epoch = 0
@@ -45,16 +50,31 @@ async function start() {
       actorLosses.push(actorLoss)
       criticLosses.push(criticLoss)
 
-      logger.actor(JSON.stringify({ epoch, actorLoss, stats: getStats(actorLosses, 100) }))
-      logger.critic(JSON.stringify({ epoch, criticLoss, stats: getStats(criticLosses, 100) }))
+      logger.actor(JSON.stringify({ epoch, actorLoss, ...getStats(actorLosses), score }))
+      logger.critic(JSON.stringify({ epoch, criticLoss, ...getStats(criticLosses) }))
 
-      if (epoch % 100 == 0) {
+      if (statsBufferSize < epoch) {
+        actorLosses.shift()
+        criticLosses.shift()
+      }
+
+
+      if (150 < epoch && Math.abs(actorLoss) < minActorLoss) {
+        minActorLoss = Math.abs(actorLoss)
+        actor.save('actor', minActorLoss)
+      }
+
+      if (150 < epoch && Math.abs(criticLoss) < minCriticLoss) {
+        minCriticLoss = Math.abs(criticLoss)
+        actor.save('critic', minCriticLoss)
+      }
+
+      if (epoch % 10 == 0) {
         gym.updateTargetActor()
         gym.updateTargetCritic()
 
-        const now = new Date().toISOString()
-        actor.save('actor_' + now)
-        critic.save('critic_' + now)
+        actor.save('actor')
+        critic.save('critic')
 
         // const data = [
         //   {

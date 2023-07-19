@@ -4,17 +4,17 @@ const { getPoints, getUnitVector, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = requir
 const logger = require('./logger')
 
 // Taum is how much of the other networks influence goes into the merger of the networks during the mutation
-const ACTOR_TAU = 0.5
-const CRITIC_TAU = 0.2
+const ACTOR_TAU = 0.07
+const CRITIC_TAU = 0.05
 
-const MAX_STEPS_PER_EPISODE = 500; // Define a maximum number of steps per episode to avoid infinite loops
+const MAX_STEPS_PER_EPISODE = 1000; // Define a maximum number of steps per episode to avoid infinite loops
 
 const DISCOUNT_RATE = 0.95
 
 const MEMORY_SIZE = 50 // Increase after rewards filter was removed
 const BATCH_SIZE = 50
 
-const RECORDING_CHANCE = 1.5 * MEMORY_SIZE / MAX_STEPS_PER_EPISODE
+const RECORDING_CHANCE = 1.1 * MEMORY_SIZE / MAX_STEPS_PER_EPISODE
 
 class Gym {
     field
@@ -143,7 +143,7 @@ async function trainCritic(targetActor, critic, targetCritic, batch) {
     const states = tf.tensor2d(batch.map(([state, action, reward, nextState]) => state.dataSync()), [batch.length, INPUT_LAYER_SIZE])
     const actions = tf.tensor2d(batch.map(([state, action, reward, nextState]) => action), [batch.length, OUTPUT_LAYER_SIZE])
 
-    const Tm = await critic.train([states, actions], targetQ)
+    const info = await critic.train([states, actions], targetQ)
 
     // Clean Up
     rewards.dispose()
@@ -152,8 +152,8 @@ async function trainCritic(targetActor, critic, targetCritic, batch) {
     targetQ.dispose()
     states.dispose()
     actions.dispose()
-
-    return Tm.history.loss[0] // critic loss
+    
+    return info.history.loss[0] // critic loss
 }
 
 async function trainActor(actor, critic, batch) {
