@@ -29,8 +29,13 @@ class Memory {
      * @returns {Array} Randomly selected samples
      */
     sample(nSamples) {
+        // Currently using a same batch and memory size
+        return this.memories
+
         const rewards = this.memories.filter(([state, action, reward, nextState]) => reward != 0)
         return sampleSize(this.memories, nSamples - rewards.length).concat(rewards);
+        
+        
         // var samples = []
         // var prevIndices = []
         // nSamples = Math.min([nSamples, this.maxMemory])

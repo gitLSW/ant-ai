@@ -3,16 +3,18 @@ const Memory = require('./memory')
 const { getPoints, getUnitVector, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
 const logger = require('./logger')
 
-const TAU = 0.05
+// Taum is how much of the other networks influence goes into the merger of the networks during the mutation
+const ACTOR_TAU = 0.5
+const CRITIC_TAU = 0.2
 
-const MAX_STEPS_PER_EPISODE = 5000; // Define a maximum number of steps per episode to avoid infinite loops
+const MAX_STEPS_PER_EPISODE = 500; // Define a maximum number of steps per episode to avoid infinite loops
 
 const DISCOUNT_RATE = 0.95
 
-const MEMORY_SIZE = 1000
+const MEMORY_SIZE = 50 // Increase after rewards filter was removed
 const BATCH_SIZE = 50
 
-const RECORDING_CHANCE = MEMORY_SIZE / MAX_STEPS_PER_EPISODE
+const RECORDING_CHANCE = 1.5 * MEMORY_SIZE / MAX_STEPS_PER_EPISODE
 
 class Gym {
     field
@@ -29,12 +31,12 @@ class Gym {
 
     updateTargetActor() {
         const actorWeights = this.actor.getLayerWeights()
-        this.targetActor.mutate(actorWeights, TAU)
+        this.targetActor.mutate(actorWeights, ACTOR_TAU)
     }
 
     updateTargetCritic() {
         const criticWeights = this.critic.getLayerWeights()
-        this.targetCritic.mutate(criticWeights, TAU)
+        this.targetCritic.mutate(criticWeights, CRITIC_TAU)
     }
 
     computeReward(actorID) {

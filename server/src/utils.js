@@ -21,7 +21,7 @@ function getStats(array, limit) {
     }
 
     if (limit) {
-        array = array.slice(0, limit)
+        array = array.slice(-limit)
     }
 
     const sum = array.reduce((acc, val) => acc + val, 0);

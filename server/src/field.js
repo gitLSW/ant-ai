@@ -1,7 +1,6 @@
 const Matter = require("matter-js");
 const { getRandom, getRandomCoordiante, getMovementSpeed, INPUT_LAYER_SIZE, NUMBER_ENTITIES_IN_FOV } = require('./utils')
 const tf = require('@tensorflow/tfjs-node')
-const path = require('path')
 
 function getEntities(worldSize, trainingActorID) {
     const ANT_COLL_GROUP = 0b0001
