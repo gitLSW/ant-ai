@@ -96,7 +96,7 @@ class AIModel {
     }
 
     async save(modelType, newMin) {
-        newMin = Math.abs(newMin)
+        newMin = newMin ? Math.abs(newMin) : null
         try {
             const now = new Date().toISOString()
             const modelName = `${modelType}_${now}` + (newMin ? `_min_${newMin.toFixed(5)}` : '')

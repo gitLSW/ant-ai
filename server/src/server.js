@@ -58,7 +58,6 @@ async function start() {
         criticLosses.shift()
       }
 
-
       if (150 < epoch && Math.abs(actorLoss) < minActorLoss) {
         minActorLoss = Math.abs(actorLoss)
         actor.save('actor', minActorLoss)
@@ -66,30 +65,17 @@ async function start() {
 
       if (150 < epoch && Math.abs(criticLoss) < minCriticLoss) {
         minCriticLoss = Math.abs(criticLoss)
-        actor.save('critic', minCriticLoss)
+        critic.save('critic', minCriticLoss)
       }
 
-      if (epoch % 10 == 0) {
+      if (epoch % 100 == 0) {
         gym.updateTargetActor()
         gym.updateTargetCritic()
+      }
 
+      if (epoch % 20 == 0) {
         actor.save('actor')
         critic.save('critic')
-
-        // const data = [
-        //   {
-        //     x: [...Array(epoch).keys()],
-        //     y: actorLosses,
-        //     type: 'scatter',
-        //   },
-        //   {
-        //     x: [...Array(epoch).keys()],
-        //     y: criticLosses,
-        //     type: 'scatter',
-        //   },
-        // ];
-
-        // plot(data);
       }
     }
   } else {
