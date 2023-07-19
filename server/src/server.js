@@ -5,14 +5,15 @@ const Gym = require("./gym")
 const Field = require("./field")
 const { getStats } = require('./utils')
 const { createActorModel, createCriticModel } = require('./ai-model')
-const express = require("express");
-const createSocket = require("socket.io")
-const http = require("http")
+const logger = require('./logger')
+// const express = require("express");
+// const createSocket = require("socket.io")
+// const http = require("http")
 
-const app = express()
-app.use(express.static("public"));
-const server = http.createServer(app);
-const io = createSocket(server);
+// const app = express()
+// app.use(express.static("public"));
+// const server = http.createServer(app);
+// const io = createSocket(server);
 
 async function start() {
   const engine = Matter.Engine.create();
@@ -28,7 +29,7 @@ async function start() {
     const critic = await createCriticModel()
     const targetCritic = await createCriticModel()
 
-    const gym = new Gym(actor, targetActor, critic, targetCritic, field, io)
+    const gym = new Gym(actor, targetActor, critic, targetCritic, field)
 
     var actorLosses = []
     var criticLosses = []
@@ -44,16 +45,16 @@ async function start() {
       actorLosses.push(actorLoss)
       criticLosses.push(criticLoss)
 
-      console.log('Actor Loss:', actorLoss, 'Stats:', getStats(actorLosses))
-      console.log('Critic Loss:', criticLoss, 'Stats:', getStats(criticLosses))
+      logger.actor(JSON.stringify({ epoch, actorLoss, stats: getStats(actorLosses) }))
+      logger.critic(JSON.stringify({ epoch, criticLoss, stats: getStats(criticLosses) }))
 
-      if (epoch % 20 == 0) {
+      if (epoch % 50 == 0) {
         gym.updateTargetActor()
         gym.updateTargetCritic()
 
         const now = new Date().toISOString()
-        // actor.save('actor_' + now)
-        // critic.save('critic_' + now)
+        actor.save('actor_' + now)
+        critic.save('critic_' + now)
 
         // const data = [
         //   {
@@ -78,31 +79,31 @@ async function start() {
   }
 }
 
+start()
+
+// io.on("connection", socket => {
+//   console.log('CONNECTION')
+//   start()
+
+//   // socket.on("disconnect", () => --online);
+//   // socket.on("register", cb => cb({ canvas }));
+//   // socket.on("player click", coordinates => {
+//   //   entities.boxes.forEach(box => {
+//   //     // servers://stackoverflow.com/a/50472656/6243352
+//   //     const force = 0.01;
+//   //     const deltaVector = Matter.Vector.sub(box.position, coordinates);
+//   //     const normalizedDelta = Matter.Vector.normalise(deltaVector);
+//   //     const forceVector = Matter.Vector.mult(normalizedDelta, force);
+//   //     Matter.Body.applyForce(box, box.position, forceVector);
+//   //   });
+//   // });
+// });
+
+// app.get('/', async (req, res) => {
+//   res.sendFile(__dirname + '/client/renderer.html')
+// })
 
 
-io.on("connection", socket => {
-  console.log('CONNECTION')
-  start()
-
-  // socket.on("disconnect", () => --online);
-  // socket.on("register", cb => cb({ canvas }));
-  // socket.on("player click", coordinates => {
-  //   entities.boxes.forEach(box => {
-  //     // servers://stackoverflow.com/a/50472656/6243352
-  //     const force = 0.01;
-  //     const deltaVector = Matter.Vector.sub(box.position, coordinates);
-  //     const normalizedDelta = Matter.Vector.normalise(deltaVector);
-  //     const forceVector = Matter.Vector.mult(normalizedDelta, force);
-  //     Matter.Body.applyForce(box, box.position, forceVector);
-  //   });
-  // });
-});
-
-app.get('/', async (req, res) => {
-  res.sendFile(__dirname + '/client/renderer.html')
-})
-
-
-server.listen(4000, () => {
-  console.log("server listening on " + 4000)
-});
+// server.listen(4000, () => {
+//   console.log("server listening on " + 4000)
+// });

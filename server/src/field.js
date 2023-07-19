@@ -41,7 +41,7 @@ function getEntities(worldSize, trainingActorID) {
     }
 
     var hasResource = false
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 150; i++) {
         const randCoordinate = getRandomCoordiante(worldSize)
 
         let random = getRandom(0, 7)
@@ -146,7 +146,7 @@ class Field {
         return this.entities[entityID].position
     }
 
-    move(id, dirV, speed) {
+    move(id, dirV) {
         const entity = this.entities[id]
         if (!entity) {
             console.log(`Couldn't find ${id}`)
@@ -156,7 +156,7 @@ class Field {
         const type = id.split('_')[0]
         const movementSpeed = getMovementSpeed(type)
 
-        Matter.Body.setVelocity(entity, { x: dirV.dx * speed * movementSpeed, y: dirV.dy * speed * movementSpeed })
+        Matter.Body.setVelocity(entity, { x: dirV.dx * movementSpeed, y: dirV.dy * movementSpeed })
 
         if (entity.position.x < 0 || this.worldSize.width < entity.position.x ||
             entity.position.y < 0 || this.worldSize.height < entity.position.y) {

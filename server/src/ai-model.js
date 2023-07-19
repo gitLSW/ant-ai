@@ -33,7 +33,7 @@ class AIModel {
         const action = output.dataSync()
         output.dispose()
 
-        return { dir: action[0], speed: action[1] }
+        return { dir: action[0] }
     }
 
     // Converts the output Vector of the NN to a number between [0, 15] using angles
@@ -67,10 +67,10 @@ class AIModel {
         this.explorationRate *= EPSILON_DECAY
 
         if (Math.random() < this.explorationRate) {
-            return { dir: Math.random(), speed: 1 }
+            return { dir: Math.random(), ai: false }
         }
 
-        return this.act(input)
+        return { ...this.act(input), ai: true }
     }
 
     resetExplorationRate() {
@@ -154,9 +154,9 @@ async function createActorModel() {
                 tf.layers.inputLayer({ inputShape: [INPUT_LAYER_SIZE], activation: 'linear' }),
 
                 // Hidden Layers
-                tf.layers.dense({ units: 15, activation: 'relu' }),
-                tf.layers.dense({ units: 10, activation: 'relu6' }),
-                tf.layers.dense({ units: 5, activation: 'sigmoid' }),
+                tf.layers.dense({ units: 12, activation: 'sigmoid' }),
+                tf.layers.dense({ units: 7, activation: 'relu6' }),
+                tf.layers.dense({ units: 3, activation: 'sigmoid' }),
 
                 // the Network spits out two scalars between 0 and 1:
                 // - one that gets converted to a unit vector denoting the movement direction

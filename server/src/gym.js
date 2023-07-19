@@ -1,7 +1,7 @@
 const tf = require('@tensorflow/tfjs-node')
 const Memory = require('./memory')
 const { getPoints, getUnitVector, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils');
-const { zip } = require('lodash');
+const logger = require('./logger')
 
 const TAU = 0.05
 
@@ -10,7 +10,7 @@ const MAX_STEPS_PER_EPISODE = 5000; // Define a maximum number of steps per epis
 const DISCOUNT_RATE = 0.95
 
 const MEMORY_SIZE = 1000
-const BATCH_SIZE = 400
+const BATCH_SIZE = 50
 
 const RECORDING_CHANCE = MEMORY_SIZE / MAX_STEPS_PER_EPISODE
 
@@ -69,16 +69,18 @@ class Gym {
         const trainingActorID = 'Ant_Player'
         this.field.reset(trainingActorID)
 
-        this.io.emit('game start', this.field.serialize())
+        this.io?.emit('game start', this.field.serialize())
 
         let inputState = this.field.getInputTensor(this.field.getFOV(trainingActorID), trainingActorID)
 
         // Game loop
         for (let step = 0; step < MAX_STEPS_PER_EPISODE && !gameOver; step++) {
             // Take random actions with explorationRate probability
-            const { dir, speed } = this.actor.chooseAction(inputState)
+            const { dir, ai } = this.actor.chooseAction(inputState)
             const dirV = getUnitVector(dir)
-            this.field.move(trainingActorID, dirV, speed)
+            this.field.move(trainingActorID, dirV)
+
+            // console.log(step, dirV, ai)
 
             // Observe the game state and calculate the reward
             const reward = this.computeReward(trainingActorID)
@@ -90,7 +92,10 @@ class Gym {
 
             // We log the InputTensor and the Output directly
             if (Math.random() < RECORDING_CHANCE || reward != 0) {
-                this.memory.record([inputState.clone(), [dir, speed], reward, nextInputState.clone()])
+                if (reward != 0) {
+                    logger.event(JSON.stringify({ frame: step, action: dirV, reward }))
+                }
+                this.memory.record([inputState.clone(), [dir], reward, nextInputState.clone()])
             }
 
             inputState.dispose()
@@ -101,14 +106,14 @@ class Gym {
                 gameOver = true
             }
 
-            if (step % 50 == 0) {
+            if (this.io && step % 50 == 0) {
                 this.io.emit('ant update', this.field.serialize('Ant'))
             }
         }
 
         inputState.dispose()
 
-        this.io.emit('game end', score)
+        this.io?.emit('game end', score)
 
         return score
     }
