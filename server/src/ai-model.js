@@ -162,7 +162,7 @@ async function createActorModel() {
                 // - one that gets converted to a unit vector denoting the movement direction
                 // - the other is the speed that the actor is moving at
                 tf.layers.dense({ units: OUTPUT_LAYER_SIZE, activation: 'linear' }),
-                tf.layers.reLU({ maxValue: 1 }) // This layer constrains the previous layer between 0 and 1
+                // tf.layers.reLU({ maxValue: 1 }) // This layer constrains the previous layer between 0 and 1
             ]
         });
 

@@ -45,8 +45,8 @@ async function start() {
       actorLosses.push(actorLoss)
       criticLosses.push(criticLoss)
 
-      logger.actor(JSON.stringify({ epoch, actorLoss, stats: getStats(actorLosses) }))
-      logger.critic(JSON.stringify({ epoch, criticLoss, stats: getStats(criticLosses) }))
+      logger.actor(JSON.stringify({ epoch, actorLoss, stats: getStats(actorLosses, 100) }))
+      logger.critic(JSON.stringify({ epoch, criticLoss, stats: getStats(criticLosses, 100) }))
 
       if (epoch % 50 == 0) {
         gym.updateTargetActor()

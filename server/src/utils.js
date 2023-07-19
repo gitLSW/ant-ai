@@ -15,9 +15,13 @@ function getUnitVector(outputScalar) {
     return { dx: Math.cos(angle), dy: Math.sin(angle) }; // Return the dx, dy coordinates
 }
 
-function getStats(array) {
+function getStats(array, limit) {
     if (!Array.isArray(array)) {
         return new Error('Input must be a array.');
+    }
+
+    if (limit) {
+        array = array.slice(0, limit)
     }
 
     const sum = array.reduce((acc, val) => acc + val, 0);
