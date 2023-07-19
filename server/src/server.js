@@ -58,12 +58,12 @@ async function start() {
         criticLosses.shift()
       }
 
-      if (150 < epoch && Math.abs(actorLoss) < minActorLoss) {
+      if (100 < epoch && Math.abs(actorLoss) < minActorLoss) {
         minActorLoss = Math.abs(actorLoss)
         actor.save('actor', minActorLoss)
       }
 
-      if (150 < epoch && Math.abs(criticLoss) < minCriticLoss) {
+      if (100 < epoch && Math.abs(criticLoss) < minCriticLoss) {
         minCriticLoss = Math.abs(criticLoss)
         critic.save('critic', minCriticLoss)
       }
