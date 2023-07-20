@@ -20,6 +20,9 @@ class Gym {
     field
     memory = new Memory(MEMORY_SIZE)
 
+    // We need target Networks and the TAU values because the critic is approaching a q Value prediction of the next step.
+    // If the network evaluating this step is the main netowrk and thefore is constantly changing, the main network cannot hone in on a value.
+    // The TAU Value is used to smoothen the transition between target and main.
     constructor(actor, targetActor, critic, targetCritic, field, io) {
         this.io = io
         this.field = field

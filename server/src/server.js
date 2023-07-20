@@ -24,7 +24,7 @@ async function start() {
   const trainingMode = true
   const actor = await createActorModel()
 
-  const statsBufferSize = 400 // If the mean is not changing, decrease this to see if it is just fluctuating (Not good)
+  const statsBufferSize = 500 // If the mean is not changing, decrease this to see if it is just fluctuating (Not good)
 
   if (trainingMode) {
     const targetActor = await createActorModel()
@@ -33,10 +33,7 @@ async function start() {
 
     const gym = new Gym(actor, targetActor, critic, targetCritic, field)
 
-    var minActorLoss = 1.6 // Establish BAseline by looking at the output
     var actorLosses = []
-
-    var minCriticLoss = 3.8166921131871407 // Establish Bseline by looking at the output
     var criticLosses = []
     // for (let epoch = 0; epoch < 500; epoch++) {
     var epoch = 0
@@ -58,22 +55,12 @@ async function start() {
         criticLosses.shift()
       }
 
-      if (100 < epoch && Math.abs(actorLoss) < minActorLoss) {
-        minActorLoss = Math.abs(actorLoss)
-        actor.save('actor', minActorLoss)
-      }
-
-      if (100 < epoch && Math.abs(criticLoss) < minCriticLoss) {
-        minCriticLoss = Math.abs(criticLoss)
-        critic.save('critic', minCriticLoss)
-      }
-
-      if (epoch % 100 == 0) {
+      if (epoch % 50 == 0) {
         gym.updateTargetActor()
         gym.updateTargetCritic()
       }
 
-      if (epoch % 20 == 0) {
+      if (epoch % 100 == 0) {
         actor.save('actor')
         critic.save('critic')
       }

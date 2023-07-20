@@ -23,8 +23,15 @@ const logger = winston.createLogger({
     }),
     transports: [
         // Filepath is relative to package.json
-        new winston.transports.File({ filename: 'log/progress.log', level: 'progress' }),
+        new winston.transports.File({ filename: 'log/progress.log', level: 'critic' }),
         new winston.transports.File({ filename: 'log/training.log', level: 'event' }),
+        // new winston.transports.File({
+        //     filename: 'log/events.log',
+        //     level: 'event',
+        //     format: printf(({ level, message }) => {
+        //         return (level === 'event') ? message : ''
+        //     })
+        // }),
         new winston.transports.Console({
             format: combine(
                 winston.format.colorize(),
