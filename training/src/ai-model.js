@@ -1,6 +1,6 @@
 const tf = require('@tensorflow/tfjs-node')
 const { MODEL_PATH, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE } = require('./utils')
-const { readdir, rm } = require('fs/promises')
+const { readdir, rm, readFile } = require('fs/promises')
 const path = require('path')
 
 const EPSILON = 1
@@ -115,11 +115,11 @@ class AIModel {
 
     mutate(layersWeights, tau) {
         layersWeights.forEach((layerWeights, i) => {
-            var networkLayerWeights = this.network.layers[i].getWeights();
+            var networkLayerWeights = this.network.layers[i].getWeights()
             for (let i = 0; i < layerWeights.length; i++) {
-                networkLayerWeights[i] = tf.mul(tau, layerWeights[i]).add(tf.mul(1 - tau, networkLayerWeights[i]));
+                networkLayerWeights[i] = tf.mul(tau, layerWeights[i]).add(tf.mul(1 - tau, networkLayerWeights[i]))
             }
-            this.network.layers[i].setWeights(networkLayerWeights);
+            this.network.layers[i].setWeights(networkLayerWeights)
         })
     }
 }
@@ -196,9 +196,9 @@ async function createActorModel() {
                 tf.layers.inputLayer({ inputShape: [INPUT_LAYER_SIZE], activation: 'linear' }),
 
                 // Hidden Layers
-                tf.layers.dense({ units: 12, activation: 'sigmoid' }),
-                tf.layers.dense({ units: 7, activation: 'relu6' }),
-                tf.layers.dense({ units: 3, activation: 'sigmoid' }),
+                tf.layers.dense({ units: 15, activation: 'sigmoid' }),
+                tf.layers.dense({ units: 10, activation: 'relu6' }),
+                tf.layers.dense({ units: 5, activation: 'sigmoid' }),
 
                 // the Network spits out two scalars between 0 and 1:
                 // - one that gets converted to a unit vector denoting the movement direction
@@ -223,14 +223,16 @@ async function createCriticModel() {
 
         console.error(`Failed to load AI model, generating a new Critic Model instead...`)
         const stateInput = tf.input({ shape: [INPUT_LAYER_SIZE], name: 'state' });
-        const stateH1 = tf.layers.dense({ units: 8, activation: 'sigmoid' }).apply(stateInput);
+        const stateH1 = tf.layers.dense({ units: 8, activation: 'relu' }).apply(stateInput);
 
         const actionInput = tf.input({ shape: [OUTPUT_LAYER_SIZE], name: 'action' });
 
         const concatenated = tf.layers.concatenate().apply([stateH1, actionInput]);
-        const concatenatedH1 = tf.layers.dense({ units: 5, activation: 'sigmoid' }).apply(concatenated);
+        const concatenatedH1 = tf.layers.dense({ units: 15, activation: 'relu' }).apply(concatenated);
+        const concatenatedH2 = tf.layers.dense({ units: 12, activation: 'relu' }).apply(concatenatedH1);
+        const concatenatedH3 = tf.layers.dense({ units: 10, activation: 'sigmoid' }).apply(concatenatedH2);
 
-        const output = tf.layers.dense({ units: 1, activation: 'linear' }).apply(concatenatedH1);
+        const output = tf.layers.dense({ units: 1, activation: 'linear' }).apply(concatenatedH3);
 
         // Create the model
         const network = tf.model({ inputs: [stateInput, actionInput], outputs: output });

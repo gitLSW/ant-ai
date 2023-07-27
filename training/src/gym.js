@@ -23,8 +23,7 @@ class Gym {
     // We need target Networks and the TAU values because the critic is approaching a q Value prediction of the next step.
     // If the network evaluating this step is the main netowrk and thefore is constantly changing, the main network cannot hone in on a value.
     // The TAU Value is used to smoothen the transition between target and main.
-    constructor(actor, targetActor, critic, targetCritic, field, io) {
-        this.io = io
+    constructor(actor, targetActor, critic, targetCritic, field) {
         this.field = field
         this.actor = actor
         this.targetActor = targetActor
@@ -74,8 +73,6 @@ class Gym {
         const trainingActorID = 'Ant_Player'
         this.field.reset(trainingActorID)
 
-        this.io?.emit('game start', this.field.serialize())
-
         let inputState = this.field.getInputTensor(this.field.getFOV(trainingActorID), trainingActorID)
 
         // Game loop
@@ -87,20 +84,26 @@ class Gym {
 
             // console.log(step, dirV, ai)
 
-            // Observe the game state and calculate the reward
-            const reward = this.computeReward(trainingActorID)
-            score += reward
-
             // Get next State
             const newFov = this.field.getFOV(trainingActorID)
             const nextInputState = this.field.getInputTensor(newFov, trainingActorID)
 
-            // We log the InputTensor and the Output directly
-            if (Math.random() < RECORDING_CHANCE || reward != 0) {
-                if (reward != 0) {
-                    logger.event(JSON.stringify({ frame: step, action: dirV, reward }))
+            // Observe the action outcome and calculate the reward
+            const reward = this.computeReward(trainingActorID)
+
+            // Do not log ant spawning in object
+            if (10 < step) {
+                score += reward
+
+                // We log the InputTensor and the Output directly
+                // Increase the chance of logging rewards: (reward != 0)
+                if (Math.random() < RECORDING_CHANCE || reward != 0) {
+                    this.memory.record([inputState.clone(), [dir], reward, nextInputState.clone()])
                 }
-                this.memory.record([inputState.clone(), [dir], reward, nextInputState.clone()])
+
+                if (reward != 0) {
+                    logger.event(JSON.stringify({ frame: step, action: dirV, reward, ai }))
+                }
             }
 
             inputState.dispose()
@@ -110,15 +113,9 @@ class Gym {
             if (!this.field.hasResources()) {
                 gameOver = true
             }
-
-            if (this.io && step % 50 == 0) {
-                this.io.emit('ant update', this.field.serialize('Ant'))
-            }
         }
 
         inputState.dispose()
-
-        this.io?.emit('game end', score)
 
         return score
     }
@@ -126,10 +123,12 @@ class Gym {
     async train() {
         var batch = this.memory.sample(BATCH_SIZE)
         const criticLoss = await trainCritic(this.actor, this.critic, this.targetCritic, batch)
+        const criticEventCount = batch.filter(([state, action, reward, nextState]) => reward != 0).length
+
         batch = this.memory.sample(BATCH_SIZE)
         const actorLoss = await trainActor(this.actor, this.critic, batch)
 
-        return { actorLoss, criticLoss }
+        return { actorLoss, criticLoss, criticEventCount }
     }
 }
 
@@ -155,7 +154,7 @@ async function trainCritic(targetActor, critic, targetCritic, batch) {
     targetQ.dispose()
     states.dispose()
     actions.dispose()
-    
+
     return info.history.loss[0] // critic loss
 }
 

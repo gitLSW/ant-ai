@@ -1,5 +1,5 @@
 const path = require('path')
-const MODEL_PATH = path.resolve(__dirname + '/../ai-models/').toString()
+const MODEL_PATH = path.resolve(__dirname + '/../../ai-models/').toString()
 
 function getRandom(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min)

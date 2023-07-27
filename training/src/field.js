@@ -40,7 +40,7 @@ function getEntities(worldSize, trainingActorID) {
     }
 
     var hasResource = false
-    for (let i = 0; i < 150; i++) {
+    for (let i = 0; i < 300; i++) {
         const randCoordinate = getRandomCoordiante(worldSize)
 
         let random = getRandom(0, 7)
