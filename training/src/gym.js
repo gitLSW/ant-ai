@@ -164,8 +164,8 @@ async function trainActor(actor, critic, batch) {
     var actorLoss
     function loss() {
         const actions = actor.predictMany(states)
-        const input = actions.map((action, i) => [states[i], action])
-        const predQs = tf.stack(critic.predictMany(input).map(output => output.asScalar()))
+        const criticInput = actions.map((action, i) => [states[i], action])
+        const predQs = tf.stack(critic.predictMany(criticInput).map(output => output.asScalar()))
 
         // variableGrads finds minima. We want a maximus, therefore mul loss by -1
         const loss = tf.mean(predQs).mul(-1).asScalar()
